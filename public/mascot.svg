@@ -1,0 +1,61 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Tail -->
+  <path d="M140 120 C160 100, 175 70, 165 45 C155 20, 130 25, 135 50 C140 75, 135 95, 130 110" fill="#C78D5D" stroke="#92400E" stroke-width="2"/>
+  <path d="M145 115 C162 98, 172 72, 163 50 C156 30, 138 33, 140 52 C143 72, 139 92, 135 108" fill="#D4A574" stroke="none"/>
+
+  <!-- Body -->
+  <ellipse cx="100" cy="130" rx="42" ry="38" fill="#C78D5D" stroke="#92400E" stroke-width="2"/>
+  <!-- Belly -->
+  <ellipse cx="100" cy="135" rx="28" ry="25" fill="#F5E6D3"/>
+
+  <!-- Left arm holding acorn -->
+  <path d="M68 125 C55 120, 48 110, 52 105 C56 100, 65 108, 72 118" fill="#C78D5D" stroke="#92400E" stroke-width="2"/>
+  <!-- Right arm holding acorn -->
+  <path d="M132 125 C145 120, 152 110, 148 105 C144 100, 135 108, 128 118" fill="#C78D5D" stroke="#92400E" stroke-width="2"/>
+
+  <!-- Acorn -->
+  <ellipse cx="100" cy="112" rx="14" ry="12" fill="#F59E0B"/>
+  <ellipse cx="100" cy="112" rx="14" ry="12" fill="url(#acornGrad)"/>
+  <path d="M86 108 C86 100, 92 95, 100 95 C108 95, 114 100, 114 108" fill="#92400E"/>
+  <rect x="98" y="89" width="4" height="8" rx="2" fill="#92400E"/>
+
+  <!-- Head -->
+  <circle cx="100" cy="70" r="35" fill="#C78D5D" stroke="#92400E" stroke-width="2"/>
+  <!-- Face light area -->
+  <circle cx="100" cy="73" r="26" fill="#D4A574"/>
+
+  <!-- Left ear -->
+  <ellipse cx="72" cy="45" rx="12" ry="16" fill="#C78D5D" stroke="#92400E" stroke-width="2" transform="rotate(-15 72 45)"/>
+  <ellipse cx="72" cy="45" rx="7" ry="11" fill="#FFB8A8" transform="rotate(-15 72 45)"/>
+  <!-- Right ear -->
+  <ellipse cx="128" cy="45" rx="12" ry="16" fill="#C78D5D" stroke="#92400E" stroke-width="2" transform="rotate(15 128 45)"/>
+  <ellipse cx="128" cy="45" rx="7" ry="11" fill="#FFB8A8" transform="rotate(15 128 45)"/>
+
+  <!-- Eyes -->
+  <circle cx="87" cy="68" r="6" fill="#2D1B0E"/>
+  <circle cx="113" cy="68" r="6" fill="#2D1B0E"/>
+  <!-- Eye highlights -->
+  <circle cx="89" cy="66" r="2.5" fill="white"/>
+  <circle cx="115" cy="66" r="2.5" fill="white"/>
+
+  <!-- Nose -->
+  <ellipse cx="100" cy="78" rx="4" ry="3" fill="#2D1B0E"/>
+
+  <!-- Smile -->
+  <path d="M92 83 C96 88, 104 88, 108 83" stroke="#2D1B0E" stroke-width="2" stroke-linecap="round" fill="none"/>
+
+  <!-- Cheek blush -->
+  <ellipse cx="78" cy="80" rx="7" ry="5" fill="#FFB8A8" opacity="0.6"/>
+  <ellipse cx="122" cy="80" rx="7" ry="5" fill="#FFB8A8" opacity="0.6"/>
+
+  <!-- Feet -->
+  <ellipse cx="82" cy="168" rx="14" ry="7" fill="#C78D5D" stroke="#92400E" stroke-width="2"/>
+  <ellipse cx="118" cy="168" rx="14" ry="7" fill="#C78D5D" stroke="#92400E" stroke-width="2"/>
+
+  <defs>
+    <linearGradient id="acornGrad" x1="86" y1="100" x2="114" y2="124" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FBBF24"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+  </defs>
+</svg>
