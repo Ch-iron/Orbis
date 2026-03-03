@@ -8,6 +8,9 @@ import { useUnbonding } from '@/hooks/useStaking';
 import { useChain } from '@/hooks/useChain';
 import { formatTokenAmount } from '@/lib/utils/format';
 
+const MS_PER_HOUR = 1000 * 60 * 60;
+const MS_PER_DAY = MS_PER_HOUR * 24;
+
 const formatRemainingTime = (completionTime: Date): string => {
   const now = new Date();
   const diffMs = completionTime.getTime() - now.getTime();
@@ -16,8 +19,8 @@ const formatRemainingTime = (completionTime: Date): string => {
     return 'Complete';
   }
 
-  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const days = Math.floor(diffMs / MS_PER_DAY);
+  const hours = Math.floor((diffMs % MS_PER_DAY) / MS_PER_HOUR);
 
   if (days > 0) {
     return `${days}d ${hours}h remaining`;

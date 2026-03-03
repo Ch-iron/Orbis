@@ -69,7 +69,12 @@ const useExchangeStore = create<ExchangeStore>()(
           if (!value) {
             return null;
           }
-          return JSON.parse(value);
+          try {
+            return JSON.parse(value);
+          } catch (parseError) {
+            console.error('exchange store parse error', parseError);
+            return null;
+          }
         },
         setItem: (name, value) => {
           safeStorage.setItem(name, JSON.stringify(value));

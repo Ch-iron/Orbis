@@ -57,8 +57,8 @@ const SplitRewardsDialog = ({
   const [restakeAmount, setRestakeAmount] = useState('');
   const totalRewardsRaw = rewards?.total ?? '0';
   const totalRewardsFormatted = formatTokenAmount(totalRewardsRaw, decimals, 6);
-  const exchangeRaw = parseTokenAmount(exchangeAmount || '0', decimals);
-  const restakeRaw = parseTokenAmount(restakeAmount || '0', decimals);
+  const exchangeRaw = parseTokenAmount(exchangeAmount === '' ? '0' : exchangeAmount, decimals);
+  const restakeRaw = parseTokenAmount(restakeAmount === '' ? '0' : restakeAmount, decimals);
   const sumRaw = BigInt(exchangeRaw) + BigInt(restakeRaw);
   const isOverTotal = sumRaw > BigInt(totalRewardsRaw);
   const remainingRaw = (() => {
@@ -124,6 +124,9 @@ const SplitRewardsDialog = ({
       toAddress: selectedExchange.address,
       exchangeAmount: exchangeRaw,
       delegations: compoundDelegations,
+    }).catch((error) => {
+      console.error('split rewards error', error);
+      return { success: false as const, txHash: null, error: 'Transaction failed' };
     });
     showTxToast(result, 'Split Rewards');
     setLoading(false);

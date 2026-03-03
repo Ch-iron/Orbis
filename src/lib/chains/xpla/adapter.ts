@@ -277,13 +277,19 @@ const createXplaAdapter = (
 
     const response = await fetch(
       `${config.lcd}/cosmos/tx/v1beta1/txs?${params.toString()}`,
-    ).catch(() => null);
+    ).catch((fetchError) => {
+      console.error('tx history fetch error', fetchError);
+      return null;
+    });
 
     if (!response?.ok) {
       return { entries: [], total: 0 };
     }
 
-    const data = await response.json().catch(() => null);
+    const data = await response.json().catch((parseError) => {
+      console.error('tx history parse error', parseError);
+      return null;
+    });
 
     if (!data?.tx_responses) {
       return { entries: [], total: 0 };

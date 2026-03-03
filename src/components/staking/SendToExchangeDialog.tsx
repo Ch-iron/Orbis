@@ -64,6 +64,9 @@ const SendToExchangeDialog = ({
     const result = await send({
       toAddress: selectedExchange.address,
       amount: rawAmount,
+    }).catch((error) => {
+      console.error('send error', error);
+      return { success: false as const, txHash: null, error: 'Transaction failed' };
     });
     showTxToast(result, 'Send to Exchange');
     setLoading(false);

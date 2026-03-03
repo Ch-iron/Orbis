@@ -1,3 +1,5 @@
+'use client';
+
 import { useQuery } from '@tanstack/react-query';
 
 const COINGECKO_API_URL = 'https://api.coingecko.com/api/v3/simple/price';
@@ -8,14 +10,17 @@ type TokenPriceData = {
 };
 
 const fetchTokenPrice = async (coingeckoId: string): Promise<TokenPriceData> => {
-  const url = `${COINGECKO_API_URL}?ids=${coingeckoId}&vs_currencies=usd&include_24hr_change=true`;
+  const url = `${COINGECKO_API_URL}?ids=${encodeURIComponent(coingeckoId)}&vs_currencies=usd&include_24hr_change=true`;
   const response = await fetch(url).catch(() => null);
 
   if (!response?.ok) {
     return { price: null, change24h: null };
   }
 
-  const data = await response.json();
+  const data = await response.json().catch(() => null);
+  if (!data) {
+    return { price: null, change24h: null };
+  }
   const tokenData = data[coingeckoId];
 
   return {

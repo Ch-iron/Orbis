@@ -158,7 +158,6 @@ const ValidatorTable = () => {
                     <Button
                       size="sm"
                       onClick={() => { handleDelegate(validator); }}
-                      disabled={validator.status !== 'active'}
                     >
                       Delegate
                     </Button>
@@ -183,7 +182,12 @@ const ValidatorTable = () => {
       {selectedValidator && (
         <StakeDialog
           open={stakeDialogOpen}
-          onOpenChange={setStakeDialogOpen}
+          onOpenChange={(open) => {
+            setStakeDialogOpen(open);
+            if (!open) {
+              setSelectedValidator(null);
+            }
+          }}
           validator={selectedValidator}
         />
       )}

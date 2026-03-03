@@ -75,7 +75,10 @@ const RestakeDialog = ({ open, onOpenChange }: RestakeDialogProps) => {
       }));
     })();
 
-    const result = await compound({ delegations: compoundDelegations });
+    const result = await compound({ delegations: compoundDelegations }).catch((error) => {
+      console.error('compound error', error);
+      return { success: false as const, txHash: null, error: 'Transaction failed' };
+    });
     showTxToast(result, 'Restake');
     setLoading(false);
 

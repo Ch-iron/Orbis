@@ -84,7 +84,7 @@ const WalletSelectDialog = ({ open, onOpenChange }: WalletSelectDialogProps) => 
     const installation = findInstallation(availableInstallations, option);
 
     if (installation) {
-      window.open(installation.url, '_blank');
+      window.open(installation.url, '_blank', 'noopener,noreferrer');
     }
   };
 

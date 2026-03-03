@@ -36,7 +36,10 @@ const StakeDialog = ({ open, onOpenChange, validator }: StakeDialogProps) => {
 
     setLoading(true);
     const rawAmount = parseTokenAmount(amount, decimals);
-    const result = await delegate({ validatorAddress: validator.address, amount: rawAmount });
+    const result = await delegate({ validatorAddress: validator.address, amount: rawAmount }).catch((error) => {
+      console.error('delegate error', error);
+      return { success: false as const, txHash: null, error: 'Transaction failed' };
+    });
     showTxToast(result, 'Delegate');
     setLoading(false);
 

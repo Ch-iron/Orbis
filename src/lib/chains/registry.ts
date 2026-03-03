@@ -41,10 +41,10 @@ const XPLA_TESTNET: ChainConfig = {
 };
 
 const CHAIN_REGISTRY: Record<string, ChainConfig> = {
-  'xpla': XPLA_MAINNET,
+  xpla: XPLA_MAINNET,
   'xpla-testnet': XPLA_TESTNET,
 };
 
 const DEFAULT_CHAIN_SLUG = 'xpla';
 
-export { CHAIN_REGISTRY, DEFAULT_CHAIN_SLUG, XPLA_MAINNET, XPLA_TESTNET };
+export { CHAIN_REGISTRY, DEFAULT_CHAIN_SLUG };

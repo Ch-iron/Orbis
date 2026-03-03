@@ -47,6 +47,9 @@ const RedelegateDialog = ({ open, onOpenChange, delegation }: RedelegateDialogPr
       srcValidatorAddress: delegation.validatorAddress,
       dstValidatorAddress: targetValidator,
       amount: rawAmount,
+    }).catch((error) => {
+      console.error('redelegate error', error);
+      return { success: false as const, txHash: null, error: 'Transaction failed' };
     });
     showTxToast(result, 'Redelegate');
     setLoading(false);

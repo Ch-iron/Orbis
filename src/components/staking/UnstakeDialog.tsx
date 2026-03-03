@@ -34,7 +34,10 @@ const UnstakeDialog = ({ open, onOpenChange, delegation }: UnstakeDialogProps) =
 
     setLoading(true);
     const rawAmount = parseTokenAmount(amount, decimals);
-    const result = await undelegate({ validatorAddress: delegation.validatorAddress, amount: rawAmount });
+    const result = await undelegate({ validatorAddress: delegation.validatorAddress, amount: rawAmount }).catch((error) => {
+      console.error('undelegate error', error);
+      return { success: false as const, txHash: null, error: 'Transaction failed' };
+    });
     showTxToast(result, 'Undelegate');
     setLoading(false);
 

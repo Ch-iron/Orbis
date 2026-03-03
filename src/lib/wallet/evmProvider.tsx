@@ -1,7 +1,7 @@
 'use client';
 
-import { ReactNode } from 'react';
-import { WagmiProvider, createConfig, http } from 'wagmi';
+import type { ReactNode } from 'react';
+import { WagmiProvider, http } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RainbowKitProvider, getDefaultConfig } from '@rainbow-me/rainbowkit';
@@ -12,7 +12,7 @@ import '@rainbow-me/rainbowkit/styles.css';
 // EVM chains will be added as needed when EVM staking support is implemented
 const wagmiConfig = getDefaultConfig({
   appName: 'SquirrelStake',
-  projectId: WALLET_CONNECT_PROJECT_ID || 'placeholder',
+  projectId: WALLET_CONNECT_PROJECT_ID ?? 'placeholder',
   chains: [mainnet],
   transports: {
     [mainnet.id]: http(),

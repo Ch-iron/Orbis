@@ -13,7 +13,11 @@ const useChain = (): { config: ChainConfig; adapter: StakingAdapter } => {
   const selectedChainSlug = useChainStore((state) => state.selectedChainSlug);
   const { walletAddress } = useWalletInfo();
 
-  const config = CHAIN_REGISTRY[selectedChainSlug]!;
+  const config = CHAIN_REGISTRY[selectedChainSlug];
+
+  if (!config) {
+    throw new Error(`Chain config not found for slug: ${selectedChainSlug}`);
+  }
 
   // Registry id is already the actual chain ID (e.g. dimension_37-1, cube_47-5)
   const adapter = useMemo(() => {

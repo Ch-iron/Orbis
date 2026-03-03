@@ -1,3 +1,5 @@
+'use client';
+
 import { useQuery } from '@tanstack/react-query';
 import { useChainStore } from '@/stores/chainStore';
 import { CHAIN_REGISTRY } from '@/lib/chains/registry';
@@ -15,7 +17,11 @@ const fetchStakingApy = async (endpoint: string): Promise<number> => {
     throw new Error('Failed to fetch staking APY');
   }
 
-  const data: StakingReturnEntry[] = await response.json();
+  const data: StakingReturnEntry[] | null = await response.json().catch(() => null);
+
+  if (!data) {
+    throw new Error('Failed to parse staking APY response');
+  }
 
   if (data.length === 0) {
     throw new Error('Empty staking return data');

@@ -40,7 +40,10 @@ const HarvestDialog = ({ open, onOpenChange }: HarvestDialogProps) => {
     }
 
     setLoading(true);
-    const result = await withdrawRewards({ validatorAddresses });
+    const result = await withdrawRewards({ validatorAddresses }).catch((error) => {
+      console.error('harvest error', error);
+      return { success: false as const, txHash: null, error: 'Transaction failed' };
+    });
     showTxToast(result, 'Harvest Rewards');
     setLoading(false);
 

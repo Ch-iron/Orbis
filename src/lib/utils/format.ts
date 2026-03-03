@@ -16,7 +16,7 @@ const formatTokenAmount = (
 
   const paddedAmount = rawAmount.padStart(decimals + 1, '0');
   const integerPart =
-    paddedAmount.slice(0, paddedAmount.length - decimals) ?? '0';
+    paddedAmount.slice(0, paddedAmount.length - decimals) || '0';
   const decimalPart = paddedAmount.slice(
     paddedAmount.length - decimals,
     paddedAmount.length - decimals + displayDecimals,
@@ -49,7 +49,7 @@ const parseTokenAmount = (
   const integerPart = parts[0] ?? '0';
   const decimalPart = (parts[1] ?? '').padEnd(decimals, '0').slice(0, decimals);
   const result =
-    `${integerPart}${decimalPart}`.replace(/^0+/, '') ?? '0';
+    `${integerPart}${decimalPart}`.replace(/^0+/, '');
   return result || '0';
 };
 
@@ -71,5 +71,4 @@ export {
   formatPercentage,
   parseTokenAmount,
   truncateAddress,
-  addThousandSeparator,
 };
