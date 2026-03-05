@@ -100,6 +100,7 @@ export type SplitRewardsParams = {
 
 export type TxHistoryEntry = {
   hash: string;
+  evmHash: string | null;
   height: number;
   timestamp: Date;
   type:

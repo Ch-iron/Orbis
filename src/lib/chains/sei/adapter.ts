@@ -19,6 +19,14 @@ import type {
 import { MSG_TYPE_MAP, mapBondStatus, extractAmount } from '../cosmos-utils';
 import type { CosmosLcdClient } from './client';
 
+// Extract EVM tx hash from the hex-encoded protobuf `data` field of a Cosmos tx response.
+// The EVM hash is stored as an ASCII string (0x + 64 hex chars) inside the protobuf payload.
+const extractEvmHash = (hexData: string): string | null => {
+  const ascii = hexData.replace(/../g, (pair) => String.fromCharCode(parseInt(pair, 16)));
+  const match = ascii.match(/0x[0-9a-f]{64}/i);
+  return match?.[0] ?? null;
+};
+
 // Create a SEI staking adapter bound to a specific chain config and sender
 const createSeiAdapter = (
   config: ChainConfig,
@@ -156,6 +164,7 @@ const createSeiAdapter = (
 
       return {
         hash: txResponse.txhash,
+        evmHash: extractEvmHash(txResponse.data),
         height: Number(txResponse.height),
         timestamp: new Date(txResponse.timestamp),
         type: txType,

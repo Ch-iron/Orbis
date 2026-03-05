@@ -177,15 +177,10 @@ const createXplaAdapter = (
     limit: number = 20,
     page: number = 1,
   ): Promise<TxHistoryResponse> => {
-    const params = new URLSearchParams({
-      query: `message.sender='${address}'`,
-      order_by: 'ORDER_BY_DESC',
-      limit: String(limit),
-      page: String(page),
-    });
+    const queryString = `query=message.sender%3D'${address}'&order_by=ORDER_BY_DESC&limit=${limit}&page=${page}`;
 
     const response = await fetch(
-      `${config.lcd}/cosmos/tx/v1beta1/txs?${params.toString()}`,
+      `${config.lcd}/cosmos/tx/v1beta1/txs?${queryString}`,
     ).catch((fetchError) => {
       console.error('tx history fetch error', fetchError);
       return null;
@@ -227,6 +222,7 @@ const createXplaAdapter = (
 
       return {
         hash: txResponse.txhash,
+        evmHash: null,
         height: Number(txResponse.height),
         timestamp: new Date(txResponse.timestamp),
         type: txType,

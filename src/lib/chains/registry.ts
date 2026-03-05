@@ -33,7 +33,7 @@ const SEI_MAINNET: ChainConfig = {
   logo: '/chains/sei.svg',
   rpc: 'https://rpc.sei-apis.com',
   lcd: 'https://rest.sei-apis.com',
-  explorer: 'https://www.seiscan.app',
+  explorer: 'https://seiscan.io',
   stakingToken: {
     denom: 'usei',
     decimals: 6,

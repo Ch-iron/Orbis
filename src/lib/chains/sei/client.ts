@@ -70,6 +70,7 @@ type TxResponse = {
   height: string;
   timestamp: string;
   code: number;
+  data: string;
   events: TxEvent[];
   tx: {
     body: {
@@ -284,7 +285,7 @@ const createCosmosLcdClient = (lcdUrl: string): CosmosLcdClient => {
     page: number,
   ): Promise<TxHistoryRawResponse> => {
     const params = new URLSearchParams({
-      query: `message.sender='${address}'`,
+      events: `message.sender='${address}'`,
       order_by: 'ORDER_BY_DESC',
       limit: String(limit),
       page: String(page),

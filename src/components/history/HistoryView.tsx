@@ -129,12 +129,12 @@ const HistoryTable = ({ transactions, decimals, symbol, explorerUrl }: HistoryTa
             </TableCell>
             <TableCell>
               <a
-                href={`${explorerUrl}/tx/${tx.hash}`}
+                href={`${explorerUrl}/tx/${tx.evmHash ?? tx.hash}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                {truncateAddress(tx.hash, 8, 6)}
+                {truncateAddress(tx.evmHash ?? tx.hash, 8, 6)}
                 <ExternalLink className="h-3 w-3" />
               </a>
             </TableCell>
