@@ -40,7 +40,7 @@ const sumWithdrawRewardsFromEvents = (
 
     // Amount format: "12345<denom>" — strip the denom suffix
     const numericStr = amountAttr.value.replace(stakingDenom, '');
-    const parsed = BigInt(numericStr || '0');
+    const parsed = BigInt(numericStr ?? '0');
     return sum + parsed;
   }, BigInt(0));
 

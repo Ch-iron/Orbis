@@ -1,6 +1,42 @@
 // Chain-agnostic type definitions for multi-chain staking dashboard
 
+import type { StakingAdapter } from './adapter';
+
 type ChainType = 'cosmos' | 'evm';
+
+export type EvmPrecompileConfig = {
+  stakingAddress: `0x${string}`;
+  distributionAddress: `0x${string}`;
+  stakingAbi: readonly Record<string, unknown>[];
+  distributionAbi: readonly Record<string, unknown>[];
+  delegate: {
+    payable: boolean;
+    includesDelegatorAddress: boolean;
+    decimalShift: number;
+  };
+  undelegate: { includesDelegatorAddress: boolean };
+  redelegate: { includesDelegatorAddress: boolean };
+  withdrawRewards: {
+    functionName: string;
+    argStyle: 'delegator-max' | 'validator-list';
+  };
+};
+
+export type GasConfig = {
+  gasPrices: string;
+  gasAdjustment: number;
+};
+
+export type AddressResolutionConfig = {
+  evmToCosmosEndpoint: string;
+  hasDualAddress: boolean;
+};
+
+export type CosmosWalletOption = {
+  label: string;
+  type: string;
+  identifier: string | undefined;
+};
 
 export type ChainConfig = {
   id: string;
@@ -23,6 +59,12 @@ export type ChainConfig = {
   evmRpc?: string;
   bech32Prefix?: string;
   stakingApyEndpoint?: string;
+  gas?: GasConfig;
+  evmPrecompile?: EvmPrecompileConfig;
+  addressResolution?: AddressResolutionConfig;
+  cosmosWalletOptions?: CosmosWalletOption[];
+  createAdapter: (config: ChainConfig, walletAddress: string, evmAddress: string) => StakingAdapter;
+  fetchApy: (config: ChainConfig) => Promise<number>;
 };
 
 export type Validator = {

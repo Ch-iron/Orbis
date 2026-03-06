@@ -7,18 +7,6 @@ import { useChainStore } from '@/stores/chainStore';
 import { CHAIN_REGISTRY } from '@/lib/chains/registry';
 import { evmToBech32 } from '@/lib/utils/address';
 import { queryKeys } from '@/lib/queryKeys';
-import {
-  STAKING_PRECOMPILE_ADDRESS as XPLA_STAKING_PRECOMPILE_ADDRESS,
-  DISTRIBUTION_PRECOMPILE_ADDRESS as XPLA_DISTRIBUTION_PRECOMPILE_ADDRESS,
-  STAKING_PRECOMPILE_ABI as XPLA_STAKING_PRECOMPILE_ABI,
-  DISTRIBUTION_PRECOMPILE_ABI as XPLA_DISTRIBUTION_PRECOMPILE_ABI,
-} from '@/lib/chains/xpla/precompile';
-import {
-  SEI_STAKING_PRECOMPILE_ADDRESS,
-  SEI_DISTRIBUTION_PRECOMPILE_ADDRESS,
-  SEI_STAKING_PRECOMPILE_ABI,
-  SEI_DISTRIBUTION_PRECOMPILE_ABI,
-} from '@/lib/chains/sei/precompile';
 import type { TxResult } from './useStakingActions';
 import type {
   DelegateParams,
@@ -37,7 +25,6 @@ const BIGINT_ZERO = BigInt(0);
 const BIGINT_TWO = BigInt(2);
 
 // Floor balance to whole tokens, keeping enough remainder for gas fees.
-// If fractional part <= 0.5 token, keep 1 extra whole token (leave 1.xxx).
 const calculateSafeStakeAmount = (balance: bigint, oneToken: bigint): bigint => {
   const wholeTokens = (balance / oneToken) * oneToken;
 
@@ -55,8 +42,7 @@ const calculateSafeStakeAmount = (balance: bigint, oneToken: bigint): bigint => 
   return wholeTokens;
 };
 
-// Distribute total stake amount proportionally among validators,
-// preserving the original ratio. Last validator absorbs rounding remainder.
+// Distribute total stake amount proportionally among validators
 const distributeProportionally = (
   totalStakeAmount: bigint,
   delegations: Array<{ validatorAddress: string; amount: string }>,
@@ -72,7 +58,6 @@ const distributeProportionally = (
 
   const allocations = delegations.map((delegation, index) => {
     if (index === delegations.length - 1) {
-      // Last validator absorbs rounding remainder
       const priorSum = delegations
         .slice(0, -1)
         .reduce(
@@ -106,10 +91,10 @@ const useEvmStakingActions = () => {
 
   const bech32Prefix = chainConfig?.bech32Prefix ?? 'xpla';
   const bech32Address = evmAddress ? evmToBech32(evmAddress, bech32Prefix) : '';
-  const isSei = selectedChainSlug === 'sei';
+  const precompile = chainConfig?.evmPrecompile;
 
-  const stakingPrecompileAddress = (isSei ? SEI_STAKING_PRECOMPILE_ADDRESS : XPLA_STAKING_PRECOMPILE_ADDRESS) as `0x${string}`;
-  const distributionPrecompileAddress = (isSei ? SEI_DISTRIBUTION_PRECOMPILE_ADDRESS : XPLA_DISTRIBUTION_PRECOMPILE_ADDRESS) as `0x${string}`;
+  const stakingPrecompileAddress = precompile?.stakingAddress ?? '0x0000000000000000000000000000000000000800';
+  const distributionPrecompileAddress = precompile?.distributionAddress ?? '0x0000000000000000000000000000000000000801';
 
   const tokenDecimals = chainConfig?.stakingToken.decimals ?? 18;
   const oneToken = BigInt(10) ** BigInt(tokenDecimals);
@@ -148,35 +133,71 @@ const useEvmStakingActions = () => {
     }, 2000);
   }, [invalidateStakingQueries]);
 
+  // Build delegate contract call args based on precompile config
+  const buildDelegateCall = useCallback(
+    (validatorAddress: string, amount: bigint) => {
+      const decimalShift = precompile?.delegate.decimalShift ?? 0;
+      const evmAmount = decimalShift > 0 ? amount * BigInt(10 ** decimalShift) : amount;
+
+      if (precompile?.delegate.includesDelegatorAddress) {
+        return writeContractAsync({
+          chainId: evmChainId,
+          address: stakingPrecompileAddress as `0x${string}`,
+          abi: precompile.stakingAbi as any,
+          functionName: 'delegate',
+          args: [evmAddress, validatorAddress, amount],
+        });
+      }
+
+      return writeContractAsync({
+        chainId: evmChainId,
+        address: stakingPrecompileAddress as `0x${string}`,
+        abi: (precompile?.stakingAbi ?? []) as any,
+        functionName: 'delegate',
+        args: [validatorAddress],
+        value: evmAmount,
+      });
+    },
+    [evmAddress, evmChainId, precompile, stakingPrecompileAddress, writeContractAsync],
+  );
+
+  // Build withdraw rewards contract call based on precompile config
+  const buildWithdrawCall = useCallback(
+    (validatorAddresses: string[]) => {
+      const withdrawConfig = precompile?.withdrawRewards;
+
+      if (withdrawConfig?.argStyle === 'validator-list') {
+        return writeContractAsync({
+          chainId: evmChainId,
+          address: distributionPrecompileAddress as `0x${string}`,
+          abi: (precompile?.distributionAbi ?? []) as any,
+          functionName: withdrawConfig.functionName,
+          args: [validatorAddresses],
+        });
+      }
+
+      // delegator-max style (e.g. XPLA claimRewards)
+      return writeContractAsync({
+        chainId: evmChainId,
+        address: distributionPrecompileAddress as `0x${string}`,
+        abi: (precompile?.distributionAbi ?? []) as any,
+        functionName: withdrawConfig?.functionName ?? 'claimRewards',
+        args: [evmAddress, MAX_CLAIM_RETRIEVE],
+      });
+    },
+    [evmAddress, evmChainId, precompile, distributionPrecompileAddress, writeContractAsync],
+  );
+
   const delegate = useCallback(
     async (params: DelegateParams): Promise<TxResult> => {
       if (!evmAddress) {
         return { success: false, txHash: null, error: 'Wallet not connected' };
       }
 
-      const txHash = await (() => {
-        if (isSei) {
-          // SEI delegate is payable: delegate(validatorAddress) with msg.value in 18 decimals
-          // Cosmos amount is in usei (6 decimals), EVM needs 18 decimals
-          const evmAmount = BigInt(params.amount) * BigInt(10 ** 12);
-          return writeContractAsync({
-            chainId: evmChainId,
-            address: stakingPrecompileAddress,
-            abi: SEI_STAKING_PRECOMPILE_ABI,
-            functionName: 'delegate',
-            args: [params.validatorAddress],
-            value: evmAmount,
-          });
-        }
-
-        return writeContractAsync({
-          chainId: evmChainId,
-          address: stakingPrecompileAddress,
-          abi: XPLA_STAKING_PRECOMPILE_ABI,
-          functionName: 'delegate',
-          args: [evmAddress, params.validatorAddress, BigInt(params.amount)],
-        });
-      })().catch((error: Error) => {
+      const txHash = await buildDelegateCall(
+        params.validatorAddress,
+        BigInt(params.amount),
+      ).catch((error: Error) => {
         console.error('evm delegate error', error);
         return null;
       });
@@ -189,7 +210,7 @@ const useEvmStakingActions = () => {
       onTxSuccess();
       return { success: true, txHash, error: null };
     },
-    [evmAddress, evmChainId, isSei, stakingPrecompileAddress, writeContractAsync, waitForTx, onTxSuccess],
+    [evmAddress, buildDelegateCall, waitForTx, onTxSuccess],
   );
 
   const undelegate = useCallback(
@@ -199,22 +220,22 @@ const useEvmStakingActions = () => {
       }
 
       const txHash = await (() => {
-        if (isSei) {
+        if (precompile?.undelegate.includesDelegatorAddress) {
           return writeContractAsync({
             chainId: evmChainId,
-            address: stakingPrecompileAddress,
-            abi: SEI_STAKING_PRECOMPILE_ABI,
+            address: stakingPrecompileAddress as `0x${string}`,
+            abi: precompile.stakingAbi as any,
             functionName: 'undelegate',
-            args: [params.validatorAddress, BigInt(params.amount)],
+            args: [evmAddress, params.validatorAddress, BigInt(params.amount)],
           });
         }
 
         return writeContractAsync({
           chainId: evmChainId,
-          address: stakingPrecompileAddress,
-          abi: XPLA_STAKING_PRECOMPILE_ABI,
+          address: stakingPrecompileAddress as `0x${string}`,
+          abi: (precompile?.stakingAbi ?? []) as any,
           functionName: 'undelegate',
-          args: [evmAddress, params.validatorAddress, BigInt(params.amount)],
+          args: [params.validatorAddress, BigInt(params.amount)],
         });
       })().catch((error: Error) => {
         console.error('evm undelegate error', error);
@@ -229,7 +250,7 @@ const useEvmStakingActions = () => {
       onTxSuccess();
       return { success: true, txHash, error: null };
     },
-    [evmAddress, evmChainId, isSei, stakingPrecompileAddress, writeContractAsync, waitForTx, onTxSuccess],
+    [evmAddress, evmChainId, precompile, stakingPrecompileAddress, writeContractAsync, waitForTx, onTxSuccess],
   );
 
   const redelegate = useCallback(
@@ -239,22 +260,22 @@ const useEvmStakingActions = () => {
       }
 
       const txHash = await (() => {
-        if (isSei) {
+        if (precompile?.redelegate.includesDelegatorAddress) {
           return writeContractAsync({
             chainId: evmChainId,
-            address: stakingPrecompileAddress,
-            abi: SEI_STAKING_PRECOMPILE_ABI,
+            address: stakingPrecompileAddress as `0x${string}`,
+            abi: precompile.stakingAbi as any,
             functionName: 'redelegate',
-            args: [params.srcValidatorAddress, params.dstValidatorAddress, BigInt(params.amount)],
+            args: [evmAddress, params.srcValidatorAddress, params.dstValidatorAddress, BigInt(params.amount)],
           });
         }
 
         return writeContractAsync({
           chainId: evmChainId,
-          address: stakingPrecompileAddress,
-          abi: XPLA_STAKING_PRECOMPILE_ABI,
+          address: stakingPrecompileAddress as `0x${string}`,
+          abi: (precompile?.stakingAbi ?? []) as any,
           functionName: 'redelegate',
-          args: [evmAddress, params.srcValidatorAddress, params.dstValidatorAddress, BigInt(params.amount)],
+          args: [params.srcValidatorAddress, params.dstValidatorAddress, BigInt(params.amount)],
         });
       })().catch((error: Error) => {
         console.error('evm redelegate error', error);
@@ -269,7 +290,7 @@ const useEvmStakingActions = () => {
       onTxSuccess();
       return { success: true, txHash, error: null };
     },
-    [evmAddress, evmChainId, isSei, stakingPrecompileAddress, writeContractAsync, waitForTx, onTxSuccess],
+    [evmAddress, evmChainId, precompile, stakingPrecompileAddress, writeContractAsync, waitForTx, onTxSuccess],
   );
 
   const withdrawRewards = useCallback(
@@ -278,25 +299,7 @@ const useEvmStakingActions = () => {
         return { success: false, txHash: null, error: 'Wallet not connected' };
       }
 
-      const txHash = await (() => {
-        if (isSei) {
-          return writeContractAsync({
-            chainId: evmChainId,
-            address: distributionPrecompileAddress,
-            abi: SEI_DISTRIBUTION_PRECOMPILE_ABI,
-            functionName: 'withdrawMultipleDelegationRewards',
-            args: [params.validatorAddresses],
-          });
-        }
-
-        return writeContractAsync({
-          chainId: evmChainId,
-          address: distributionPrecompileAddress,
-          abi: XPLA_DISTRIBUTION_PRECOMPILE_ABI,
-          functionName: 'claimRewards',
-          args: [evmAddress, MAX_CLAIM_RETRIEVE],
-        });
-      })().catch((error: Error) => {
+      const txHash = await buildWithdrawCall(params.validatorAddresses).catch((error: Error) => {
         console.error('evm withdrawRewards error', error);
         return null;
       });
@@ -309,7 +312,7 @@ const useEvmStakingActions = () => {
       onTxSuccess();
       return { success: true, txHash, error: null };
     },
-    [evmAddress, evmChainId, isSei, distributionPrecompileAddress, writeContractAsync, waitForTx, onTxSuccess],
+    [evmAddress, buildWithdrawCall, waitForTx, onTxSuccess],
   );
 
   const send = useCallback(
@@ -345,26 +348,8 @@ const useEvmStakingActions = () => {
       }
 
       // Step 1: Claim all rewards
-      const validatorAddresses = params.delegations.map((d) => d.validatorAddress);
-      const claimTxHash = await (() => {
-        if (isSei) {
-          return writeContractAsync({
-            chainId: evmChainId,
-            address: distributionPrecompileAddress,
-            abi: SEI_DISTRIBUTION_PRECOMPILE_ABI,
-            functionName: 'withdrawMultipleDelegationRewards',
-            args: [validatorAddresses],
-          });
-        }
-
-        return writeContractAsync({
-          chainId: evmChainId,
-          address: distributionPrecompileAddress,
-          abi: XPLA_DISTRIBUTION_PRECOMPILE_ABI,
-          functionName: 'claimRewards',
-          args: [evmAddress, MAX_CLAIM_RETRIEVE],
-        });
-      })().catch((error: Error) => {
+      const validatorAddresses = params.delegations.map((delegation) => delegation.validatorAddress);
+      const claimTxHash = await buildWithdrawCall(validatorAddresses).catch((error: Error) => {
         console.error('evm compound claimRewards error', error);
         return null;
       });
@@ -394,26 +379,10 @@ const useEvmStakingActions = () => {
 
       // Step 4: Delegate to each validator sequentially
       for (const delegation of adjustedDelegations) {
-        const delegateTxHash = await (() => {
-          if (isSei) {
-            return writeContractAsync({
-              chainId: evmChainId,
-              address: stakingPrecompileAddress,
-              abi: SEI_STAKING_PRECOMPILE_ABI,
-              functionName: 'delegate',
-              args: [delegation.validatorAddress],
-              value: delegation.amount,
-            });
-          }
-
-          return writeContractAsync({
-            chainId: evmChainId,
-            address: stakingPrecompileAddress,
-            abi: XPLA_STAKING_PRECOMPILE_ABI,
-            functionName: 'delegate',
-            args: [evmAddress, delegation.validatorAddress, delegation.amount],
-          });
-        })().catch((error: Error) => {
+        const delegateTxHash = await buildDelegateCall(
+          delegation.validatorAddress,
+          delegation.amount,
+        ).catch((error: Error) => {
           console.error('evm compound delegate error', error);
           return null;
         });
@@ -433,7 +402,7 @@ const useEvmStakingActions = () => {
       onTxSuccess();
       return { success: true, txHash: claimTxHash, error: null };
     },
-    [evmAddress, evmChainId, publicClient, oneToken, isSei, stakingPrecompileAddress, distributionPrecompileAddress, writeContractAsync, waitForTx, onTxSuccess],
+    [evmAddress, publicClient, oneToken, buildDelegateCall, buildWithdrawCall, waitForTx, onTxSuccess],
   );
 
   const splitRewards = useCallback(
@@ -443,26 +412,8 @@ const useEvmStakingActions = () => {
       }
 
       // Step 1: Claim rewards
-      const validatorAddresses = params.delegations.map((d) => d.validatorAddress);
-      const claimTxHash = await (() => {
-        if (isSei) {
-          return writeContractAsync({
-            chainId: evmChainId,
-            address: distributionPrecompileAddress,
-            abi: SEI_DISTRIBUTION_PRECOMPILE_ABI,
-            functionName: 'withdrawMultipleDelegationRewards',
-            args: [validatorAddresses],
-          });
-        }
-
-        return writeContractAsync({
-          chainId: evmChainId,
-          address: distributionPrecompileAddress,
-          abi: XPLA_DISTRIBUTION_PRECOMPILE_ABI,
-          functionName: 'claimRewards',
-          args: [evmAddress, MAX_CLAIM_RETRIEVE],
-        });
-      })().catch((error: Error) => {
+      const validatorAddresses = params.delegations.map((delegation) => delegation.validatorAddress);
+      const claimTxHash = await buildWithdrawCall(validatorAddresses).catch((error: Error) => {
         console.error('evm splitRewards claimRewards error', error);
         return null;
       });
@@ -513,26 +464,10 @@ const useEvmStakingActions = () => {
 
       // Step 5: Delegate to each validator sequentially
       for (const delegation of adjustedDelegations) {
-        const delegateTxHash = await (() => {
-          if (isSei) {
-            return writeContractAsync({
-              chainId: evmChainId,
-              address: stakingPrecompileAddress,
-              abi: SEI_STAKING_PRECOMPILE_ABI,
-              functionName: 'delegate',
-              args: [delegation.validatorAddress],
-              value: delegation.amount,
-            });
-          }
-
-          return writeContractAsync({
-            chainId: evmChainId,
-            address: stakingPrecompileAddress,
-            abi: XPLA_STAKING_PRECOMPILE_ABI,
-            functionName: 'delegate',
-            args: [evmAddress, delegation.validatorAddress, delegation.amount],
-          });
-        })().catch((error: Error) => {
+        const delegateTxHash = await buildDelegateCall(
+          delegation.validatorAddress,
+          delegation.amount,
+        ).catch((error: Error) => {
           console.error('evm splitRewards delegate error', error);
           return null;
         });
@@ -552,7 +487,7 @@ const useEvmStakingActions = () => {
       onTxSuccess();
       return { success: true, txHash: claimTxHash, error: null };
     },
-    [evmAddress, evmChainId, publicClient, oneToken, isSei, stakingPrecompileAddress, distributionPrecompileAddress, writeContractAsync, sendTransactionAsync, waitForTx, onTxSuccess],
+    [evmAddress, evmChainId, publicClient, oneToken, buildDelegateCall, buildWithdrawCall, sendTransactionAsync, waitForTx, onTxSuccess],
   );
 
   return {

@@ -15,30 +15,7 @@ import { useWalletInfo } from '@/hooks/useWalletInfo';
 import { useWalletTypeStore } from '@/stores/walletTypeStore';
 import { useChainStore } from '@/stores/chainStore';
 import { CHAIN_REGISTRY } from '@/lib/chains/registry';
-
-type WalletOption = {
-  label: string;
-  type: ConnectType;
-  identifier: string | undefined;
-};
-
-const WALLET_OPTIONS: WalletOption[] = [
-  {
-    label: 'WalletConnect',
-    type: ConnectType.WALLETCONNECT,
-    identifier: undefined,
-  },
-  {
-    label: 'XPLA Games Wallet',
-    type: ConnectType.EXTENSION,
-    identifier: 'c2xvault',
-  },
-  {
-    label: 'XPLA Vault Wallet',
-    type: ConnectType.EXTENSION,
-    identifier: 'xplavault',
-  },
-];
+import type { CosmosWalletOption } from '@/lib/chains/types';
 
 type WalletSelectDialogProps = {
   open: boolean;
@@ -47,9 +24,9 @@ type WalletSelectDialogProps = {
 
 const findConnection = (
   connections: Connection[],
-  option: WalletOption,
+  option: CosmosWalletOption,
 ): Connection | undefined => {
-  if (option.type === ConnectType.WALLETCONNECT) {
+  if (option.type === 'WALLETCONNECT') {
     return connections.find(
       (connection) => connection.type === ConnectType.WALLETCONNECT,
     );
@@ -57,18 +34,18 @@ const findConnection = (
 
   return connections.find(
     (connection) =>
-      connection.type === option.type &&
+      connection.type === (option.type as ConnectType) &&
       connection.identifier === option.identifier,
   );
 };
 
 const findInstallation = (
   installations: Installation[],
-  option: WalletOption,
+  option: CosmosWalletOption,
 ): Installation | undefined => {
   return installations.find(
     (installation) =>
-      installation.type === option.type &&
+      installation.type === (option.type as ConnectType) &&
       installation.identifier === option.identifier,
   );
 };
@@ -84,7 +61,8 @@ const WalletSelectDialog = ({ open, onOpenChange }: WalletSelectDialogProps) => 
   const selectedChainSlug = useChainStore((state) => state.selectedChainSlug);
   const chainConfig = CHAIN_REGISTRY[selectedChainSlug];
   const evmChainId = chainConfig?.evmChainId;
-  const isXpla = selectedChainSlug === 'xpla';
+  const cosmosWalletOptions = chainConfig?.cosmosWalletOptions ?? [];
+  const hasCosmosWallets = cosmosWalletOptions.length > 0;
 
   const metaMaskConnector = connectors.find(
     (connector) => connector.id === 'metaMaskSDK' || connector.id === 'io.metamask',
@@ -92,11 +70,11 @@ const WalletSelectDialog = ({ open, onOpenChange }: WalletSelectDialogProps) => 
     (connector) => connector.name.toLowerCase().includes('metamask'),
   );
 
-  const handleCosmosOptionClick = (option: WalletOption) => {
+  const handleCosmosOptionClick = (option: CosmosWalletOption) => {
     const connection = findConnection(availableConnections, option);
 
     if (connection) {
-      connect(option.type, option.identifier);
+      connect(option.type as ConnectType, option.identifier);
       setWalletType('cosmos');
       onOpenChange(false);
       return;
@@ -159,10 +137,10 @@ const WalletSelectDialog = ({ open, onOpenChange }: WalletSelectDialogProps) => 
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-2">
-          {isXpla && WALLET_OPTIONS.map((option) => {
+          {hasCosmosWallets && cosmosWalletOptions.map((option) => {
             const connection = findConnection(availableConnections, option);
             const installation = findInstallation(availableInstallations, option);
-            const isAvailable = option.type === ConnectType.WALLETCONNECT || !!connection;
+            const isAvailable = option.type === 'WALLETCONNECT' || !!connection;
             const isInstallable = !isAvailable && !!installation;
             const icon = connection?.icon ?? installation?.icon;
 
@@ -192,7 +170,7 @@ const WalletSelectDialog = ({ open, onOpenChange }: WalletSelectDialogProps) => 
             );
           })}
 
-          {isXpla && (
+          {hasCosmosWallets && (
             <div className="my-1 flex items-center gap-2">
               <div className="h-px flex-1 bg-border" />
               <span className="text-xs text-muted-foreground">EVM Wallets</span>

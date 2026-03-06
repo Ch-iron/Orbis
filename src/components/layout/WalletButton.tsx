@@ -38,7 +38,8 @@ const WalletButton = () => {
   if (isConnected && walletAddress) {
     // SEI + EVM wallet: allow toggling between sei1... and 0x... display
     const chainName = CHAIN_REGISTRY[selectedChainSlug]?.name ?? selectedChainSlug;
-    const hasDualAddress = selectedChainSlug === 'sei' && walletType === 'evm' && !!evmAddress;
+    const chainConfig = CHAIN_REGISTRY[selectedChainSlug];
+    const hasDualAddress = !!chainConfig?.addressResolution?.hasDualAddress && walletType === 'evm' && !!evmAddress;
     const displayAddress = hasDualAddress && addressView === 'evm' ? evmAddress : walletAddress;
     const alternateLabel = addressView === 'evm' ? `${chainName} Address` : 'EVM Address';
 

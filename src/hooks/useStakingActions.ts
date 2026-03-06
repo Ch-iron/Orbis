@@ -17,7 +17,7 @@ import type {
   CompoundParams,
   SplitRewardsParams,
 } from '@/lib/chains/types';
-import { XPLA_GAS_PRICES, XPLA_GAS_ADJUSTMENT } from '@/lib/chains/xpla/constants';
+import { CHAIN_REGISTRY } from '@/lib/chains/registry';
 
 type TxResult = {
   success: boolean;
@@ -29,6 +29,7 @@ const useCosmosStakingActions = () => {
   const connectedWallet = useConnectedWallet();
   const { adapter } = useChain();
   const selectedChainSlug = useChainStore((state) => state.selectedChainSlug);
+  const chainConfig = CHAIN_REGISTRY[selectedChainSlug];
   const queryClient = useQueryClient();
 
   const invalidateStakingQueries = useCallback(() => {
@@ -58,8 +59,8 @@ const useCosmosStakingActions = () => {
       const result = await connectedWallet
         .post({
           msgs: msgs as any[],
-          gasPrices: XPLA_GAS_PRICES,
-          gasAdjustment: XPLA_GAS_ADJUSTMENT,
+          gasPrices: chainConfig?.gas?.gasPrices ?? '850000000000axpla',
+          gasAdjustment: chainConfig?.gas?.gasAdjustment ?? 1.75,
         })
         .catch((error: Error) => {
           console.error('tx error', error);
@@ -86,7 +87,7 @@ const useCosmosStakingActions = () => {
         error: null,
       };
     },
-    [connectedWallet, invalidateStakingQueries],
+    [connectedWallet, chainConfig, invalidateStakingQueries],
   );
 
   const delegate = useCallback(
