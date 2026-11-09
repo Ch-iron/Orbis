@@ -1,0 +1,14 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import ts from 'typescript';
+import vm from 'node:vm';
+import * as core from '@ton/core';
+const owner=`0:${'1'.repeat(64)}`,pool=`-1:${'2'.repeat(64)}`;
+function load(path,imports){const c={exports:{},require:n=>imports[n]};vm.runInNewContext(ts.transpileModule(fs.readFileSync(path,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,c);return c.exports;}
+const tonAddress=a=>core.Address.parse(a).toRawString();
+function actions(options={}){const api={tonAddress,readTonPools:async()=>[{address:pool}],readTonPool:async()=>({minStake:core.toNano('10'),count:options.full?40n:1n,capacity:40n}),readTonPosition:async()=>({active:options.empty?0n:core.toNano('10'),pending:0n,withdrawing:!!options.withdrawing}),readTonBalance:async()=>core.toNano(options.poor?'10':'100')};return load('src/features/ton-staking/actions.ts',{'@ton/core':core,'@/lib/chains/ton/client':api}).prepareTonAction;}
+test('TON deposit adds one TON fee and uses a comment payload',async()=>{const tx=await actions()(owner,{kind:'stake',pool,amount:'10.000000001'});assert.equal(tx.messages[0].amount,'11000000001');assert.equal(tx.network,'-239');const body=core.Cell.fromBase64(tx.messages[0].payload).beginParse();assert.equal(body.loadUint(32),0);assert.equal(body.loadStringTail(),'d');});
+test('TON invalid amounts, minimum, balance, capacity and pending withdrawals reject before signing',async()=>{for(const amount of ['','0','-1','9','10.0000000001'])await assert.rejects(actions()(owner,{kind:'stake',pool,amount}));for(const options of [{poor:true},{empty:true,full:true},{withdrawing:true}])await assert.rejects(actions(options)(owner,{kind:'stake',pool,amount:'10'}));});
+test('TON withdrawal is whole position with one TON message fee',async()=>{for(const options of [{empty:true},{withdrawing:true}])await assert.rejects(actions(options)(owner,{kind:'withdraw',pool}));const tx=await actions()(owner,{kind:'withdraw',pool});assert.equal(tx.messages[0].amount,'1000000000');assert.equal(core.Cell.fromBase64(tx.messages[0].payload).beginParse().skip(32).loadStringTail(),'w');});
+test('TON wallet approval alone is not pool execution success',()=>{const {inspectTonTrace}=load('src/features/ton-staking/receipt.ts',{'@ton/core':core,'@/lib/chains/ton/client':{tonAddress}});const trace=(address,extra={})=>({transaction:{success:true,aborted:false,account:{address}},...extra});assert.equal(inspectTonTrace(trace(owner),pool),'pending');assert.equal(inspectTonTrace(trace(owner,{children:[trace(pool,{emulated:true})]}),pool),'pending');assert.equal(inspectTonTrace(trace(owner,{children:[trace(pool)]}),pool),'success');assert.equal(inspectTonTrace(trace(pool,{transaction:{success:false,aborted:true,account:{address:pool}}}),pool),'failed');});
