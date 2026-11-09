@@ -26,15 +26,15 @@ import type {
   SplitRewardsParams,
   TxHistoryResponse,
 } from '../types';
-import { MSG_TYPE_MAP, mapBondStatus, extractAmount } from '../cosmos-utils';
+import { MSG_TYPE_MAP, mapBondStatus, extractAmount, resolveKeybaseLogos } from '../cosmos-utils';
 import type { TxEvent } from '../cosmos-utils';
 
 // Fetch all validators across paginated responses using recursion
 const fetchAllValidators = async (lcd: LCDClient): Promise<Validator[]> => {
   const fetchPage = async (
     currentKey: string | null,
-    accumulated: Validator[],
-  ): Promise<Validator[]> => {
+    accumulated: Array<Validator & { identity: string }>,
+  ): Promise<Array<Validator & { identity: string }>> => {
     const paginationParams = currentKey
       ? { 'pagination.key': currentKey }
       : {};
@@ -46,7 +46,8 @@ const fetchAllValidators = async (lcd: LCDClient): Promise<Validator[]> => {
     const mapped = validators.map((validator) => ({
       address: validator.operator_address,
       name: validator.description.moniker,
-      logo: null,
+      identity: validator.description.identity ?? '',
+      logo: null as string | null,
       commission: parseFloat(
         validator.commission.commission_rates.rate.toString(),
       ),
@@ -64,7 +65,15 @@ const fetchAllValidators = async (lcd: LCDClient): Promise<Validator[]> => {
     return fetchPage(pagination.next_key, nextAccumulated);
   };
 
-  return fetchPage(null, []);
+  const validators = await fetchPage(null, []);
+
+  const identities = validators.map((validator) => validator.identity);
+  const logoMap = await resolveKeybaseLogos(identities);
+
+  return validators.map(({ identity, ...validator }) => ({
+    ...validator,
+    logo: logoMap.get(identity) ?? null,
+  }));
 };
 
 // Create an XPLA staking adapter bound to a specific chain config and sender

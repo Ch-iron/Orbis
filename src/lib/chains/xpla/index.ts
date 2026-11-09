@@ -1,6 +1,7 @@
 // XPLA chain configuration module
 
 import type { ChainConfig } from '../types';
+import { EVM_WALLET_OPTIONS } from '@/lib/wallet/evm-options';
 import { createXplaClient } from './client';
 import { createXplaAdapter } from './adapter';
 import {
@@ -93,6 +94,7 @@ const XPLA_CONFIG: ChainConfig = {
     { label: 'XPLA Games Wallet', type: 'EXTENSION', identifier: 'c2xvault' },
     { label: 'XPLA Vault Wallet', type: 'EXTENSION', identifier: 'xplavault' },
   ],
+  evmWalletOptions: EVM_WALLET_OPTIONS,
   createAdapter,
   fetchApy: fetchXplaApy,
 };
