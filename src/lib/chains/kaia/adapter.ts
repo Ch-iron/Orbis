@@ -1,19 +1,11 @@
 // Kaia chain implementation of the StakingAdapter
 
-import type { ChainConfig } from '../types';
 import type { StakingAdapter } from '../adapter';
 import type {
   Validator,
   Delegation,
   RewardInfo,
   UnbondingEntry,
-  DelegateParams,
-  UndelegateParams,
-  RedelegateParams,
-  WithdrawParams,
-  SendParams,
-  CompoundParams,
-  SplitRewardsParams,
   TxHistoryResponse,
 } from '../types';
 import type { KaiaClient, CouncilEntry } from './client';
@@ -27,13 +19,8 @@ const KAIA_METHOD_TYPE_MAP: Record<string, TxHistoryResponse['entries'][number][
   '0x76c70cb2': 'redelegate', // redelegate(address,uint256)
 };
 
-// Create a Kaia staking adapter bound to a specific chain config and addresses
-const createKaiaAdapter = (
-  _config: ChainConfig,
-  client: KaiaClient,
-  _walletAddress: string,
-  _evmAddress: string = '',
-): StakingAdapter => {
+// Keep council metadata local to this adapter instance.
+const createKaiaAdapter = (client: KaiaClient): StakingAdapter => {
   // Cache for PD address -> council entry mapping
   const cachedCouncilEntries: Map<string, CouncilEntry> = new Map();
 
@@ -76,7 +63,7 @@ const createKaiaAdapter = (
     }
 
     const delegations = await Promise.all(
-      Array.from(cachedCouncilEntries.entries()).map(async ([_pdAddressLower, entry]) => {
+      Array.from(cachedCouncilEntries.values()).map(async (entry) => {
         if (!entry.pdAddress) {
           return null;
         }
@@ -104,7 +91,7 @@ const createKaiaAdapter = (
   };
 
   // Kaia PublicDelegation is auto-compounding — rewards are reflected in pdKAIA value increase
-  const getRewards = async (_address: string): Promise<RewardInfo> => {
+  const getRewards = async (): Promise<RewardInfo> => {
     return { total: '0', perValidator: [] };
   };
 
@@ -120,7 +107,7 @@ const createKaiaAdapter = (
     }
 
     const allRequests = await Promise.all(
-      Array.from(cachedCouncilEntries.entries()).map(async ([_pdAddressLower, entry]) => {
+      Array.from(cachedCouncilEntries.values()).map(async (entry) => {
         if (!entry.pdAddress) {
           return [];
         }
@@ -186,32 +173,7 @@ const createKaiaAdapter = (
     return { entries, total: data.totalCount };
   };
 
-  // Build*Msg methods all throw since Kaia uses EVM smart contract calls
-  const buildDelegateMsg = (_params: DelegateParams): unknown => {
-    throw new Error('Use EVM wallet for Kaia transactions');
-  };
-
-  const buildUndelegateMsg = (_params: UndelegateParams): unknown => {
-    throw new Error('Use EVM wallet for Kaia transactions');
-  };
-
-  const buildRedelegateMsg = (_params: RedelegateParams): unknown => {
-    throw new Error('Use EVM wallet for Kaia transactions');
-  };
-
-  const buildWithdrawRewardsMsg = (_params: WithdrawParams): unknown[] => {
-    throw new Error('Use EVM wallet for Kaia transactions');
-  };
-
-  const buildSendMsg = (_params: SendParams): unknown => {
-    throw new Error('Use EVM wallet for Kaia transactions');
-  };
-
-  const buildCompoundMsg = (_params: CompoundParams): unknown[] => {
-    throw new Error('Use EVM wallet for Kaia transactions');
-  };
-
-  const buildSplitRewardsMsg = (_params: SplitRewardsParams): unknown[] => {
+  const unsupported = (): never => {
     throw new Error('Use EVM wallet for Kaia transactions');
   };
 
@@ -222,13 +184,13 @@ const createKaiaAdapter = (
     getUnbonding,
     getBalance,
     getTransactionHistory,
-    buildDelegateMsg,
-    buildUndelegateMsg,
-    buildRedelegateMsg,
-    buildWithdrawRewardsMsg,
-    buildSendMsg,
-    buildCompoundMsg,
-    buildSplitRewardsMsg,
+    buildDelegateMsg: unsupported,
+    buildUndelegateMsg: unsupported,
+    buildRedelegateMsg: unsupported,
+    buildWithdrawRewardsMsg: unsupported,
+    buildSendMsg: unsupported,
+    buildCompoundMsg: unsupported,
+    buildSplitRewardsMsg: unsupported,
   };
 };
 

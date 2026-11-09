@@ -7,13 +7,6 @@ import type {
   Delegation,
   RewardInfo,
   UnbondingEntry,
-  DelegateParams,
-  UndelegateParams,
-  RedelegateParams,
-  WithdrawParams,
-  SendParams,
-  CompoundParams,
-  SplitRewardsParams,
   TxHistoryResponse,
 } from '../types';
 import { mapBondStatus, resolveKeybaseLogos } from '../cosmos-utils';
@@ -261,32 +254,7 @@ const createSeiAdapter = (
     return { entries, total };
   };
 
-  // Build*Msg methods all throw since SEI uses EVM signing
-  const buildDelegateMsg = (_params: DelegateParams): unknown => {
-    throw new Error('Use EVM wallet for SEI transactions');
-  };
-
-  const buildUndelegateMsg = (_params: UndelegateParams): unknown => {
-    throw new Error('Use EVM wallet for SEI transactions');
-  };
-
-  const buildRedelegateMsg = (_params: RedelegateParams): unknown => {
-    throw new Error('Use EVM wallet for SEI transactions');
-  };
-
-  const buildWithdrawRewardsMsg = (_params: WithdrawParams): unknown[] => {
-    throw new Error('Use EVM wallet for SEI transactions');
-  };
-
-  const buildSendMsg = (_params: SendParams): unknown => {
-    throw new Error('Use EVM wallet for SEI transactions');
-  };
-
-  const buildCompoundMsg = (_params: CompoundParams): unknown[] => {
-    throw new Error('Use EVM wallet for SEI transactions');
-  };
-
-  const buildSplitRewardsMsg = (_params: SplitRewardsParams): unknown[] => {
+  const unsupported = (): never => {
     throw new Error('Use EVM wallet for SEI transactions');
   };
 
@@ -297,13 +265,13 @@ const createSeiAdapter = (
     getUnbonding,
     getBalance,
     getTransactionHistory,
-    buildDelegateMsg,
-    buildUndelegateMsg,
-    buildRedelegateMsg,
-    buildWithdrawRewardsMsg,
-    buildSendMsg,
-    buildCompoundMsg,
-    buildSplitRewardsMsg,
+    buildDelegateMsg: unsupported,
+    buildUndelegateMsg: unsupported,
+    buildRedelegateMsg: unsupported,
+    buildWithdrawRewardsMsg: unsupported,
+    buildSendMsg: unsupported,
+    buildCompoundMsg: unsupported,
+    buildSplitRewardsMsg: unsupported,
   };
 };
 

@@ -15,6 +15,7 @@ function render(slug,projectId='project',pending=false){
  const config={evmChainId:1,evmWalletOptions:options,cosmosWalletOptions:[{label:'Old native option'}]};
  const wrapper=({children})=>React.createElement('div',null,children);
  const imports={
+  'next/image': ({ unoptimized, ...props }) => React.createElement('img', props),
   react:React,'react/jsx-runtime':jsxRuntime,'@xpla/wallet-provider':{ConnectType:{}},lucide:{},
   '@/features/wallet/useEvmConnection':{useEvmConnection:()=>({connectors:[],pending,error:null})},
   '@/features/avalanche-staking/AvalancheWalletOptions': {AvalancheWalletOptions:()=>null},

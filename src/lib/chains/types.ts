@@ -1,5 +1,6 @@
 // Chain-agnostic type definitions for multi-chain staking dashboard
 
+import type { Abi } from 'viem';
 import type { StakingAdapter } from './adapter';
 
 type ChainType = 'avalanche' | 'vechain' | 'cardano' | 'ton' | 'multiversx' | 'near' | 'cosmos' | 'evm' | 'algorand' | 'move';
@@ -7,8 +8,8 @@ type ChainType = 'avalanche' | 'vechain' | 'cardano' | 'ton' | 'multiversx' | 'n
 export type EvmPrecompileConfig = {
   stakingAddress: `0x${string}`;
   distributionAddress: `0x${string}`;
-  stakingAbi: readonly Record<string, unknown>[];
-  distributionAbi: readonly Record<string, unknown>[];
+  stakingAbi: Abi;
+  distributionAbi: Abi;
   delegate: {
     payable: boolean;
     includesDelegatorAddress: boolean;
@@ -23,8 +24,8 @@ export type EvmPrecompileConfig = {
 };
 
 export type PublicDelegationConfig = {
-  stakingAbi: readonly Record<string, unknown>[];
-  cnStakingAbi: readonly Record<string, unknown>[];
+  stakingAbi: Abi;
+  cnStakingAbi: Abi;
 };
 
 export type GasConfig = {

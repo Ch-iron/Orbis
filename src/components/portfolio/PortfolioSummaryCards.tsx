@@ -45,8 +45,8 @@ const PortfolioSummaryCards = () => {
   const totalUnbonding = unbondingEntries
     ? sumAmounts(unbondingEntries.map((entry) => entry.amount))
     : '0';
-  const { decimals, symbol, denom } = config.stakingToken;
-  const rewardDisplay = formatRewardDisplay(rewards?.total ?? '0', decimals, symbol, denom);
+  const { decimals, symbol } = config.stakingToken;
+  const rewardDisplay = formatRewardDisplay(rewards?.total ?? '0', decimals, symbol);
 
   const formattedApy = apy !== null ? `${(apy * 100).toFixed(2)}%` : '-';
 

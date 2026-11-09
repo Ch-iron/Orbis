@@ -45,8 +45,8 @@ const SEI_CONFIG: ChainConfig = {
   evmPrecompile: {
     stakingAddress: SEI_STAKING_PRECOMPILE_ADDRESS as `0x${string}`,
     distributionAddress: SEI_DISTRIBUTION_PRECOMPILE_ADDRESS as `0x${string}`,
-    stakingAbi: SEI_STAKING_PRECOMPILE_ABI as unknown as readonly Record<string, unknown>[],
-    distributionAbi: SEI_DISTRIBUTION_PRECOMPILE_ABI as unknown as readonly Record<string, unknown>[],
+    stakingAbi: SEI_STAKING_PRECOMPILE_ABI,
+    distributionAbi: SEI_DISTRIBUTION_PRECOMPILE_ABI,
     delegate: {
       payable: true,
       includesDelegatorAddress: false,

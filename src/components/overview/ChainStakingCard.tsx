@@ -24,7 +24,7 @@ type ChainStakingCardProps = {
 
 const ChainStakingCard = ({ chain }: ChainStakingCardProps) => {
   const { config, delegations, rewards, unbonding, balance } = chain;
-  const { decimals, symbol, denom } = config.stakingToken;
+  const { decimals, symbol } = config.stakingToken;
 
   const totalStaked = delegations
     ? sumAmounts(delegations.map((delegation) => delegation.amount))
@@ -34,7 +34,7 @@ const ChainStakingCard = ({ chain }: ChainStakingCardProps) => {
     ? sumAmounts(unbonding.map((entry) => entry.amount))
     : '0';
 
-  const rewardDisplay = formatRewardDisplay(rewards?.total ?? '0', decimals, symbol, denom);
+  const rewardDisplay = formatRewardDisplay(rewards?.total ?? '0', decimals, symbol);
   const separateRewards = rewards?.tokens?.length
     ? rewards.tokens.map((coin) => `${formatTokenAmount(coin.amount, coin.decimals, 4)} ${coin.symbol}`).join(' + ')
     : null;

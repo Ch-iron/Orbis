@@ -28,7 +28,7 @@ import type { Delegation } from '@/lib/chains/types';
 const StakingDelegationList = () => {
   const { config } = useChain();
   const { data: delegations, isLoading } = useDelegations();
-  const { decimals, symbol, denom } = config.stakingToken;
+  const { decimals, symbol } = config.stakingToken;
   const [unstakeTarget, setUnstakeTarget] = useState<Delegation | null>(null);
   const [redelegateTarget, setRedelegateTarget] = useState<Delegation | null>(
     null,
@@ -141,7 +141,7 @@ const StakingDelegationList = () => {
                   </TableCell>
                   <TableCell className='text-right'>
                     {(() => {
-                      const reward = formatRewardDisplay(delegation.rewards, decimals, symbol, denom);
+                      const reward = formatRewardDisplay(delegation.rewards, decimals, symbol);
                       return (
                         <>
                           {reward.value}{' '}

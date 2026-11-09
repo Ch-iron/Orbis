@@ -139,7 +139,7 @@ const useEvmStakingActions = () => {
         return writeContractAsync({
           chainId: evmChainId,
           address: validatorAddress as `0x${string}`,
-          abi: publicDelegationConfig.stakingAbi as any,
+          abi: publicDelegationConfig.stakingAbi,
           functionName: 'stakeKaia',
           value: amount,
         });
@@ -152,7 +152,7 @@ const useEvmStakingActions = () => {
         return writeContractAsync({
           chainId: evmChainId,
           address: stakingPrecompileAddress as `0x${string}`,
-          abi: precompile.stakingAbi as any,
+          abi: precompile.stakingAbi,
           functionName: 'delegate',
           args: [evmAddress, validatorAddress, amount],
         });
@@ -161,7 +161,7 @@ const useEvmStakingActions = () => {
       return writeContractAsync({
         chainId: evmChainId,
         address: stakingPrecompileAddress as `0x${string}`,
-        abi: (precompile?.stakingAbi ?? []) as any,
+        abi: (precompile?.stakingAbi ?? []),
         functionName: 'delegate',
         args: [validatorAddress],
         value: evmAmount,
@@ -179,7 +179,7 @@ const useEvmStakingActions = () => {
         return writeContractAsync({
           chainId: evmChainId,
           address: distributionPrecompileAddress as `0x${string}`,
-          abi: (precompile?.distributionAbi ?? []) as any,
+          abi: (precompile?.distributionAbi ?? []),
           functionName: withdrawConfig.functionName,
           args: [validatorAddresses],
         });
@@ -189,7 +189,7 @@ const useEvmStakingActions = () => {
       return writeContractAsync({
         chainId: evmChainId,
         address: distributionPrecompileAddress as `0x${string}`,
-        abi: (precompile?.distributionAbi ?? []) as any,
+        abi: (precompile?.distributionAbi ?? []),
         functionName: withdrawConfig?.functionName ?? 'claimRewards',
         args: [evmAddress, MAX_CLAIM_RETRIEVE],
       });
@@ -234,7 +234,7 @@ const useEvmStakingActions = () => {
           return writeContractAsync({
             chainId: evmChainId,
             address: params.validatorAddress as `0x${string}`,
-            abi: publicDelegationConfig.stakingAbi as any,
+            abi: publicDelegationConfig.stakingAbi,
             functionName: 'withdraw',
             args: [BigInt(params.amount), evmAddress, evmAddress],
           });
@@ -244,7 +244,7 @@ const useEvmStakingActions = () => {
           return writeContractAsync({
             chainId: evmChainId,
             address: stakingPrecompileAddress as `0x${string}`,
-            abi: precompile.stakingAbi as any,
+            abi: precompile.stakingAbi,
             functionName: 'undelegate',
             args: [evmAddress, params.validatorAddress, BigInt(params.amount)],
           });
@@ -253,7 +253,7 @@ const useEvmStakingActions = () => {
         return writeContractAsync({
           chainId: evmChainId,
           address: stakingPrecompileAddress as `0x${string}`,
-          abi: (precompile?.stakingAbi ?? []) as any,
+          abi: (precompile?.stakingAbi ?? []),
           functionName: 'undelegate',
           args: [params.validatorAddress, BigInt(params.amount)],
         });
@@ -286,7 +286,7 @@ const useEvmStakingActions = () => {
           return writeContractAsync({
             chainId: evmChainId,
             address: params.srcValidatorAddress as `0x${string}`,
-            abi: publicDelegationConfig.stakingAbi as any,
+            abi: publicDelegationConfig.stakingAbi,
             functionName: 'redelegate',
             args: [params.dstValidatorAddress, BigInt(params.amount)],
           });
@@ -296,7 +296,7 @@ const useEvmStakingActions = () => {
           return writeContractAsync({
             chainId: evmChainId,
             address: stakingPrecompileAddress as `0x${string}`,
-            abi: precompile.stakingAbi as any,
+            abi: precompile.stakingAbi,
             functionName: 'redelegate',
             args: [evmAddress, params.srcValidatorAddress, params.dstValidatorAddress, BigInt(params.amount)],
           });
@@ -305,7 +305,7 @@ const useEvmStakingActions = () => {
         return writeContractAsync({
           chainId: evmChainId,
           address: stakingPrecompileAddress as `0x${string}`,
-          abi: (precompile?.stakingAbi ?? []) as any,
+          abi: (precompile?.stakingAbi ?? []),
           functionName: 'redelegate',
           args: [params.srcValidatorAddress, params.dstValidatorAddress, BigInt(params.amount)],
         });

@@ -8,6 +8,7 @@ import { useChainStore } from '@/stores/chainStore';
 import { useWalletTypeStore } from '@/stores/walletTypeStore';
 import { useEvmStakingActions } from './useEvmStakingActions';
 import { useKlipStakingActions } from './useKlipStakingActions';
+import { toXplaMessages } from '@/features/xpla-staking/messages';
 import { queryKeys } from '@/lib/queryKeys';
 import type {
   DelegateParams,
@@ -59,7 +60,7 @@ const useCosmosStakingActions = () => {
 
       const result = await connectedWallet
         .post({
-          msgs: msgs as any[],
+          msgs: toXplaMessages(msgs),
           gasPrices: chainConfig?.gas?.gasPrices ?? '850000000000axpla',
           gasAdjustment: chainConfig?.gas?.gasAdjustment ?? 1.75,
         })
@@ -84,7 +85,7 @@ const useCosmosStakingActions = () => {
 
       return {
         success: true,
-        txHash: (result as any).result?.txhash ?? null,
+        txHash: result.result?.txhash ?? null,
         error: null,
       };
     },

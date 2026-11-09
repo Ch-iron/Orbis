@@ -1,6 +1,7 @@
 'use client';
 
 import { AvalancheWalletOptions } from '@/features/avalanche-staking/AvalancheWalletOptions';
+import Image from 'next/image';
 import { CardanoWalletOptions } from '@/features/cardano-staking/CardanoWalletOptions';
 import { VechainWalletOptions } from '@/features/vechain-staking/VechainWalletOptions';
 import { TonWalletOptions } from '@/features/ton-staking/TonWalletOptions';
@@ -146,9 +147,12 @@ const WalletSelectDialog = ({ open, onOpenChange }: WalletSelectDialogProps) => 
               >
                 <div className="flex items-center gap-3">
                   {icon && (
-                    <img
+                    <Image
                       src={icon}
                       alt={option.label}
+                      width={32}
+                      height={32}
+                      unoptimized
                       className="h-8 w-8 rounded-md"
                     />
                   )}
@@ -180,9 +184,12 @@ const WalletSelectDialog = ({ open, onOpenChange }: WalletSelectDialogProps) => 
                   onClick={() => { handleEvmWalletClick(option); }}
                 >
                   <div className="flex items-center gap-3">
-                    <img
+                    <Image
                       src={connector?.icon ?? option.icon}
                       alt={option.label}
+                      width={32}
+                      height={32}
+                      unoptimized
                       className="h-8 w-8 rounded-md"
                     />
                     <span className="font-medium">{option.label}</span>

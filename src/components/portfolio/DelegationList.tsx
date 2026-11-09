@@ -23,7 +23,7 @@ const DelegationList = () => {
   const { config } = useChain();
   const { data: delegations, isLoading } = useDelegations();
   const selectedChainSlug = useChainStore((state) => state.selectedChainSlug);
-  const { decimals, symbol, denom } = config.stakingToken;
+  const { decimals, symbol } = config.stakingToken;
 
   if (isLoading) {
     return (
@@ -92,7 +92,7 @@ const DelegationList = () => {
                 </TableCell>
                 <TableCell className="text-right">
                   {(() => {
-                    const reward = formatRewardDisplay(delegation.rewards, decimals, symbol, denom);
+                    const reward = formatRewardDisplay(delegation.rewards, decimals, symbol);
                     return (
                       <>
                         {reward.value}{' '}

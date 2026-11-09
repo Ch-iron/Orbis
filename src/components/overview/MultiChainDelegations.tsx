@@ -90,8 +90,8 @@ const MultiChainDelegations = ({ chains }: MultiChainDelegationsProps) => {
           </TableHeader>
           <TableBody>
             {allDelegations.map((delegation) => {
-              const { decimals, symbol, denom } = delegation.config.stakingToken;
-              const reward = formatRewardDisplay(delegation.rewards, decimals, symbol, denom);
+              const { decimals, symbol } = delegation.config.stakingToken;
+              const reward = formatRewardDisplay(delegation.rewards, decimals, symbol);
 
               return (
                 <TableRow key={`${delegation.config.slug}-${delegation.validatorAddress}`}>

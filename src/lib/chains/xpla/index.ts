@@ -42,7 +42,7 @@ const fetchXplaApy = async (config: ChainConfig): Promise<number> => {
   return parseFloat(data.apr);
 };
 
-const createAdapter = (config: ChainConfig, walletAddress: string, _evmAddress: string) => {
+const createAdapter = (config: ChainConfig, walletAddress: string) => {
   const client = createXplaClient(config.lcd, config.id);
   return createXplaAdapter(config, client, walletAddress);
 };
@@ -75,8 +75,8 @@ const XPLA_CONFIG: ChainConfig = {
   evmPrecompile: {
     stakingAddress: STAKING_PRECOMPILE_ADDRESS as `0x${string}`,
     distributionAddress: DISTRIBUTION_PRECOMPILE_ADDRESS as `0x${string}`,
-    stakingAbi: STAKING_PRECOMPILE_ABI as unknown as readonly Record<string, unknown>[],
-    distributionAbi: DISTRIBUTION_PRECOMPILE_ABI as unknown as readonly Record<string, unknown>[],
+    stakingAbi: STAKING_PRECOMPILE_ABI,
+    distributionAbi: DISTRIBUTION_PRECOMPILE_ABI,
     delegate: {
       payable: false,
       includesDelegatorAddress: true,

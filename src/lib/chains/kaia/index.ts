@@ -146,10 +146,10 @@ const fetchKaiaApy = async (config: ChainConfig): Promise<number> => {
   return apy;
 };
 
-// Create a Kaia staking adapter from config and wallet addresses
-const createAdapter = (config: ChainConfig, walletAddress: string, evmAddress: string) => {
+// Each adapter owns its council metadata cache.
+const createAdapter = () => {
   const client = createKaiaClient();
-  return createKaiaAdapter(config, client, walletAddress, evmAddress);
+  return createKaiaAdapter(client);
 };
 
 const KAIA_CONFIG: ChainConfig = {
@@ -171,8 +171,8 @@ const KAIA_CONFIG: ChainConfig = {
   evmChainId: KAIA_CHAIN_ID,
   evmRpc: KAIA_RPC_URL,
   publicDelegation: {
-    stakingAbi: PUBLIC_DELEGATION_ABI as unknown as readonly Record<string, unknown>[],
-    cnStakingAbi: CN_STAKING_V3_ABI as unknown as readonly Record<string, unknown>[],
+    stakingAbi: PUBLIC_DELEGATION_ABI,
+    cnStakingAbi: CN_STAKING_V3_ABI,
   },
   txHistoryExternalUrl: (address: string) => `https://kaiascan.io/account/${address}?tabId=txList`,
   evmWalletOptions: EVM_WALLET_OPTIONS,

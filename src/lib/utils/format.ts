@@ -79,7 +79,6 @@ const formatRewardDisplay = (
   rawAmount: string,
   decimals: number,
   symbol: string,
-  denom: string,
 ): RewardDisplay => {
   const microSymbol = `u${symbol}`;
 

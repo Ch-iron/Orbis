@@ -25,6 +25,7 @@ const useKlipStakingActions = () => {
   const selectedChainSlug = useChainStore((state) => state.selectedChainSlug);
   const chainConfig = CHAIN_REGISTRY[selectedChainSlug];
   const queryClient = useQueryClient();
+  const evmRpc = chainConfig?.evmRpc;
 
   const queryAddress = klipAddress ?? '';
 
@@ -47,17 +48,17 @@ const useKlipStakingActions = () => {
 
   const waitForTx = useCallback(
     async (txHash: string): Promise<void> => {
-      if (!chainConfig?.evmRpc) {
+      if (!evmRpc) {
         return;
       }
 
       const client = createPublicClient({
-        transport: http(chainConfig.evmRpc),
+        transport: http(evmRpc),
       });
 
       await client.waitForTransactionReceipt({ hash: txHash as `0x${string}` });
     },
-    [chainConfig?.evmRpc],
+    [evmRpc],
   );
 
   const onTxSuccess = useCallback(() => {
@@ -168,31 +169,31 @@ const useKlipStakingActions = () => {
   );
 
   // Kaia uses auto-compounding — no separate reward withdrawal
-  const withdrawRewards = useCallback(
-    async (_params: WithdrawParams): Promise<TxResult> => {
+  const withdrawRewards = useCallback<(params: WithdrawParams) => Promise<TxResult>>(
+    async (): Promise<TxResult> => {
       return { success: true, txHash: null, error: null };
     },
     [],
   );
 
-  const send = useCallback(
-    async (_params: SendParams): Promise<TxResult> => {
+  const send = useCallback<(params: SendParams) => Promise<TxResult>>(
+    async (): Promise<TxResult> => {
       return { success: false, txHash: null, error: 'Send not supported via Klip' };
     },
     [],
   );
 
   // Kaia uses auto-compounding — no manual compound needed
-  const compound = useCallback(
-    async (_params: CompoundParams): Promise<TxResult> => {
+  const compound = useCallback<(params: CompoundParams) => Promise<TxResult>>(
+    async (): Promise<TxResult> => {
       return { success: true, txHash: null, error: null };
     },
     [],
   );
 
   // Kaia uses auto-compounding — split rewards not applicable
-  const splitRewards = useCallback(
-    async (_params: SplitRewardsParams): Promise<TxResult> => {
+  const splitRewards = useCallback<(params: SplitRewardsParams) => Promise<TxResult>>(
+    async (): Promise<TxResult> => {
       return { success: true, txHash: null, error: null };
     },
     [],
