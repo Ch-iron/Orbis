@@ -35,16 +35,19 @@ const ChainStakingCard = ({ chain }: ChainStakingCardProps) => {
     : '0';
 
   const rewardDisplay = formatRewardDisplay(rewards?.total ?? '0', decimals, symbol, denom);
+  const separateRewards = rewards?.tokens?.length
+    ? rewards.tokens.map((coin) => `${formatTokenAmount(coin.amount, coin.decimals, 4)} ${coin.symbol}`).join(' + ')
+    : null;
   const formattedApy = chain.apy !== null ? `${(chain.apy * 100).toFixed(2)}%` : '-';
 
   const delegationCount = delegations?.length ?? 0;
 
   const statItems = [
     { label: 'APY', value: formattedApy, loading: chain.apyLoading, suffix: '' },
-    { label: 'Staked', value: formatTokenAmount(totalStaked, decimals, 4), loading: chain.delegationsLoading, suffix: symbol },
-    { label: 'Available', value: formatTokenAmount(balance ?? '0', decimals, 4), loading: chain.balanceLoading, suffix: symbol },
-    { label: 'Rewards', value: rewardDisplay.value, loading: chain.rewardsLoading, suffix: rewardDisplay.unit, suffixTooltip: rewardDisplay.tooltip },
-    { label: 'Unbonding', value: formatTokenAmount(totalUnbonding, decimals, 4), loading: chain.unbondingLoading, suffix: symbol },
+    { label: config.slug === 'cardano' ? 'Delegated (liquid)' : 'Staked', value: delegations === undefined ? '-' : formatTokenAmount(totalStaked, decimals, 4), loading: chain.delegationsLoading, suffix: symbol },
+    { label: 'Available', value: balance === undefined ? '-' : formatTokenAmount(balance, decimals, 4), loading: chain.balanceLoading, suffix: symbol },
+    { label: 'Rewards', value: rewards === undefined ? '-' : separateRewards ?? rewardDisplay.value, loading: chain.rewardsLoading, suffix: separateRewards ? '' : rewardDisplay.unit, suffixTooltip: separateRewards ? null : rewardDisplay.tooltip },
+    { label: 'Unbonding', value: unbonding === undefined ? '-' : formatTokenAmount(totalUnbonding, decimals, 4), loading: chain.unbondingLoading, suffix: symbol },
   ];
 
   return (
@@ -61,7 +64,7 @@ const ChainStakingCard = ({ chain }: ChainStakingCardProps) => {
           />
           <div className="flex flex-col">
             <span className="text-sm font-semibold leading-tight">{config.name}</span>
-            {!chain.delegationsLoading && (
+            {!chain.delegationsLoading && delegations !== undefined && (
               <span className="text-[11px] text-muted-foreground leading-tight">
                 {delegationCount} delegation{delegationCount !== 1 ? 's' : ''}
               </span>

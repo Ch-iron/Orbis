@@ -1,6 +1,18 @@
 'use client';
 
+import { useAvalancheWallet } from '@/features/avalanche-staking/wallet';
+import { useCardanoWallet } from '@/features/cardano-staking/wallet';
+import { useWallet as useVechainWallet } from '@vechain/dapp-kit-react';
+import { useTonWallet } from '@tonconnect/ui-react';
+import { useMultiversxWallet } from '@/features/multiversx-staking/wallet';
+import { useNearWallet } from '@/features/near-staking/wallet';
+import { useWallet as useAptosWallet } from '@aptos-labs/wallet-adapter-react';
+import { useWallet as useAlgoWallet } from '@txnlab/use-wallet-react';
+import { useCurrentAccount as useIotaAccount } from '@iota/dapp-kit';
+import { useCurrentAccount as useSuiAccount } from '@mysten/dapp-kit-react';
+import { useSuiWalletConnect } from '@/features/sui-staking/walletconnect';
 import { useMemo } from 'react';
+import { useChain as useCosmosKitChain } from '@cosmos-kit/react';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import {
   useWallet,
@@ -9,6 +21,7 @@ import {
 } from '@xpla/wallet-provider';
 import { useAccount } from 'wagmi';
 import { useWalletTypeStore } from '@/stores/walletTypeStore';
+import { useKlipStore } from '@/stores/klipStore';
 import { CHAIN_REGISTRY, SORTED_CHAIN_SLUGS } from '@/lib/chains/registry';
 import { queryKeys } from '@/lib/queryKeys';
 import { evmToBech32 } from '@/lib/utils/address';
@@ -51,9 +64,28 @@ const useMultiChainStaking = (): {
   const connectedWallet = useConnectedWallet();
   const { address: evmAddress, isConnected: isEvmConnected } = useAccount();
   const walletType = useWalletTypeStore((state) => state.walletType);
+  const klipAddress = useKlipStore((state) => state.klipAddress);
+  const avalanche = useAvalancheWallet((state) => state.connection);
+  const cardano = useCardanoWallet((state) => state.connection);
+  const vechainAddress = useVechainWallet().account;
+  const tonWallet = useTonWallet();
+  const tonAddress = tonWallet?.account.chain === '-239' ? tonWallet.account.address : null;
+  const multiversxAddress = useMultiversxWallet((state) => state.address);
+  const nearAddress = useNearWallet((state) => state.address);
+  const aptosWallet = useAptosWallet();
+  const aptosAddress = aptosWallet.connected ? aptosWallet.account?.address.toString() : undefined;
+  const suiAccount = useSuiAccount();
+  const suiWalletConnect = useSuiWalletConnect((state) => state.connection);
+  const suiAddress = suiWalletConnect?.address ?? suiAccount?.address;
+  const iotaAddress = useIotaAccount()?.address;
+  const { activeAddress: algoAddress } = useAlgoWallet();
+  const celestiaWallet = useCosmosKitChain('celestia', false);
+  const dydxWallet = useCosmosKitChain('dydx', false);
+  const celestiaAddress = celestiaWallet.isWalletConnected ? celestiaWallet.address : null;
+  const dydxAddress = dydxWallet.isWalletConnected ? dydxWallet.address : null;
 
   const isCosmosConnected = status === WalletStatus.WALLET_CONNECTED;
-  const isConnected = (walletType === 'evm' && isEvmConnected) || isCosmosConnected;
+  const isConnected = (walletType === 'avalanche' && !!avalanche) || (walletType === 'vechain' && !!vechainAddress) || (walletType === 'cardano' && !!cardano) || (walletType === 'ton' && !!tonAddress) || (walletType === 'multiversx' && !!multiversxAddress) || (walletType === 'near' && !!nearAddress) || (walletType === 'aptos' && !!aptosAddress) || (walletType === 'sui' && !!suiAddress) || (walletType === 'iota' && !!iotaAddress) || (walletType === 'algorand' && !!algoAddress) || (walletType === 'evm' && isEvmConnected) || (walletType === 'klip' && !!klipAddress) || (walletType === 'native-cosmos' && !!(celestiaAddress || dydxAddress)) || isCosmosConnected;
 
   // Address resolution query for chains that need it (e.g. SEI)
   const resolutionConfig = findAddressResolutionConfig();
@@ -75,7 +107,30 @@ const useMultiChainStaking = (): {
     return CHAIN_SLUGS.map((slug) => {
       const config = CHAIN_REGISTRY[slug]!;
 
+      if (walletType === 'avalanche') return slug === 'avalanche' ? avalanche?.address ?? null : null;
+      if (walletType === 'cardano') return slug === 'cardano' ? cardano?.stakeAddress ?? null : null;
+      if (walletType === 'vechain') return slug === 'vechain' ? vechainAddress : null;
+      if (walletType === 'ton') return slug === 'ton' ? tonAddress : null;
+      if (walletType === 'multiversx') return slug === 'multiversx' ? multiversxAddress : null;
+      if (walletType === 'near') return slug === 'near' ? nearAddress : null;
+      if (walletType === 'aptos') return slug === 'aptos' ? aptosAddress ?? null : null;
+      if (walletType === 'sui') return slug === 'sui' ? suiAddress ?? null : null;
+      if (walletType === 'iota') return slug === 'iota' ? iotaAddress ?? null : null;
+      if (walletType === 'algorand') return slug === 'algorand' ? algoAddress : null;
+
+      if (walletType === 'native-cosmos') {
+        if (slug === 'celestia') return celestiaAddress ?? null;
+        if (slug === 'dydx') return dydxAddress ?? null;
+        return null;
+      }
+
+      if (walletType === 'klip' && klipAddress && config.slug === 'kaia') {
+        return klipAddress;
+      }
+
       if (walletType === 'evm' && isEvmConnected && evmAddress) {
+        if (!config.evmChainId) return null;
+        if (!config.bech32Prefix) return evmAddress;
         if (config.addressResolution) {
           return associatedCosmosAddress ?? evmToBech32(evmAddress, config.bech32Prefix ?? 'cosmos');
         }
@@ -88,7 +143,7 @@ const useMultiChainStaking = (): {
 
       return null;
     });
-  }, [walletType, isEvmConnected, evmAddress, associatedCosmosAddress, isCosmosConnected, connectedWallet]);
+  }, [walletType, isEvmConnected, evmAddress, associatedCosmosAddress, isCosmosConnected, connectedWallet, klipAddress, celestiaAddress, dydxAddress, algoAddress, iotaAddress, suiAddress, aptosAddress, nearAddress, multiversxAddress, tonAddress, cardano, vechainAddress, avalanche]);
 
   // Create adapters (memoized, read-only)
   const adapters = useMemo(() => {

@@ -18,6 +18,38 @@ const EvmProviderWrapper = dynamic(
   { ssr: false },
 );
 
+const VechainProviderWrapper = dynamic(() => import('@/lib/wallet/vechainProvider').then((mod) => mod.VechainProvider), { ssr: false });
+
+const TonProviderWrapper = dynamic(() => import('@/lib/wallet/tonProvider').then((mod) => mod.TonProvider), { ssr: false });
+
+const AptosProviderWrapper = dynamic(() => import('@/lib/wallet/aptosProvider').then((mod) => mod.AptosProvider), { ssr: false });
+
+const SuiProviderWrapper = dynamic(
+  () => import('@/lib/wallet/suiProvider').then((mod) => mod.SuiProvider),
+  { ssr: false },
+);
+
+const IotaProviderWrapper = dynamic(
+  () => import('@/lib/wallet/iotaProvider').then((mod) => mod.IotaProvider),
+  { ssr: false },
+);
+
+const AlgorandProviderWrapper = dynamic(
+  () => import('@/lib/wallet/algorandProvider').then((mod) => mod.AlgorandProvider),
+  { ssr: false },
+);
+
+const CosmosProviderWrapper = dynamic(
+  () => import('@/lib/wallet/cosmosProvider').then((mod) => mod.CosmosProvider),
+  { ssr: false },
+);
+
+// Dynamic import KlipApprovalDialog to avoid SSR issues
+const KlipApprovalDialog = dynamic(
+  () => import('@/components/common/KlipApprovalDialog').then((mod) => mod.KlipApprovalDialog),
+  { ssr: false },
+);
+
 type ProvidersProps = {
   children: ReactNode;
 };
@@ -40,7 +72,20 @@ const Providers = ({ children }: ProvidersProps) => {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <WalletProviderWrapper>
-            <EvmProviderWrapper>{children}</EvmProviderWrapper>
+            <EvmProviderWrapper>
+              <CosmosProviderWrapper>
+                <AlgorandProviderWrapper>
+                  <IotaProviderWrapper>
+                    <SuiProviderWrapper>
+                      <AptosProviderWrapper>
+                      <TonProviderWrapper><VechainProviderWrapper>{children}</VechainProviderWrapper></TonProviderWrapper>
+                      <KlipApprovalDialog />
+                      </AptosProviderWrapper>
+                    </SuiProviderWrapper>
+                  </IotaProviderWrapper>
+                </AlgorandProviderWrapper>
+              </CosmosProviderWrapper>
+            </EvmProviderWrapper>
           </WalletProviderWrapper>
         </TooltipProvider>
       </QueryClientProvider>

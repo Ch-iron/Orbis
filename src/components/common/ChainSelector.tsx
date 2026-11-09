@@ -70,6 +70,11 @@ const useChainChange = () => {
       disconnect();
     }
 
+    // Disconnect Klip wallet if switching away from Kaia
+    if (walletType === 'klip' && slug !== 'kaia') {
+      disconnect();
+    }
+
     setSelectedChainSlug(slug);
   };
 };

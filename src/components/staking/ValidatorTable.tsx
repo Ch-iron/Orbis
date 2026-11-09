@@ -16,13 +16,17 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useValidators, useDelegations } from '@/hooks/useStaking';
 import { useChain } from '@/hooks/useChain';
+import { useStakingApy } from '@/hooks/useStakingApy';
+import { getValidatorYield, compareValidatorYields } from '@/features/staking/validator-yield';
 import { formatPercentage, formatTokenAmount } from '@/lib/utils/format';
 import Image from 'next/image';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { ArrowUpDown, Search, Check } from 'lucide-react';
 import { StakeDialog } from './StakeDialog';
 import type { Validator } from '@/lib/chains/types';
 
-type SortField = 'commission' | 'votingPower' | 'name';
+type SortField = 'commission' | 'votingPower' | 'name' | 'apy';
 type SortDirection = 'asc' | 'desc';
 
 const STATUS_VARIANT_MAP: Record<
@@ -36,6 +40,7 @@ const STATUS_VARIANT_MAP: Record<
 
 const ValidatorTable = () => {
   const { config } = useChain();
+  const { apy: networkRate } = useStakingApy(config.slug === 'sei');
   const { data: validators, isLoading } = useValidators();
   const { data: delegations } = useDelegations();
   const delegatedAddresses = useMemo(() => {
@@ -47,6 +52,7 @@ const ValidatorTable = () => {
     );
   }, [delegations]);
   const [search, setSearch] = useState('');
+  const [delegatableOnly, setDelegatableOnly] = useState(false);
   const [sortField, setSortField] = useState<SortField>('votingPower');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [selectedValidator, setSelectedValidator] = useState<Validator | null>(
@@ -63,6 +69,23 @@ const ValidatorTable = () => {
     setSortDirection('desc');
   };
 
+  const hasApy = useMemo(() => {
+    if (config.slug === 'sei' || config.slug === 'kaia') {
+      return true;
+    }
+    if (!validators) {
+      return false;
+    }
+    return validators.some((validator) => validator.apy !== undefined);
+  }, [validators, config.slug]);
+
+  const hasDelegatable = useMemo(() => {
+    if (!validators) {
+      return false;
+    }
+    return validators.some((validator) => validator.delegatable === false);
+  }, [validators]);
+
   const filteredAndSorted = useMemo(() => {
     if (!validators) {
       return [];
@@ -71,7 +94,8 @@ const ValidatorTable = () => {
     const filtered = validators.filter(
       (validator) =>
         validator.status === 'active' &&
-        validator.name.toLowerCase().includes(search.toLowerCase()),
+        validator.name.toLowerCase().includes(search.toLowerCase()) &&
+        (!delegatableOnly || validator.delegatable !== false),
     );
 
     return filtered.sort((validatorA, validatorB) => {
@@ -87,9 +111,16 @@ const ValidatorTable = () => {
             : -1) * multiplier
         );
       }
+      if (sortField === 'apy') {
+        return compareValidatorYields(
+          getValidatorYield(config.slug, validatorA, networkRate),
+          getValidatorYield(config.slug, validatorB, networkRate),
+          sortDirection,
+        );
+      }
       return validatorA.name.localeCompare(validatorB.name) * multiplier;
     });
-  }, [validators, search, sortField, sortDirection]);
+  }, [validators, search, delegatableOnly, sortField, sortDirection, config.slug, networkRate]);
 
   const handleDelegate = (validator: Validator) => {
     setSelectedValidator(validator);
@@ -118,19 +149,46 @@ const ValidatorTable = () => {
       <Card>
         <CardHeader className='flex flex-row items-center justify-between gap-4 flex-wrap'>
           <CardTitle>Validators ({filteredAndSorted.length})</CardTitle>
-          <div className='relative w-64'>
-            <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
-            <Input
-              placeholder='Search validators...'
-              value={search}
-              onChange={(event) => {
-                setSearch(event.target.value);
-              }}
-              className='pl-9'
-            />
+          <div className='flex items-center gap-2'>
+            {hasDelegatable && (
+              <div className='flex items-center gap-2'>
+                <Switch
+                  id='delegatable-filter'
+                  checked={delegatableOnly}
+                  onCheckedChange={setDelegatableOnly}
+                />
+                <Label htmlFor='delegatable-filter' className='text-sm cursor-pointer'>
+                  Delegatable
+                </Label>
+              </div>
+            )}
+            <div className='relative w-64'>
+              <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+              <Input
+                placeholder='Search validators...'
+                value={search}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                }}
+                className='pl-9'
+              />
+            </div>
           </div>
         </CardHeader>
         <CardContent>
+          {config.slug === 'sei' && (
+            <p className='mb-4 text-sm text-muted-foreground'>
+              APR (annual percentage rate) uses the same calculation as the Sei Dashboard:
+              current mint rate, bonded stake, community tax and validator commission.
+              It excludes compounding; values may differ slightly as chain data updates.
+            </p>
+          )}
+          {config.slug === 'kaia' && (
+            <p className='mb-4 text-sm text-muted-foreground'>
+              APY (annual percentage yield) is reported per validator by Kaia Square.
+              Unavailable rates are shown as a dash.
+            </p>
+          )}
           <Table>
             <TableHeader>
               <TableRow>
@@ -168,14 +226,38 @@ const ValidatorTable = () => {
                     Voting Power <ArrowUpDown className='h-3 w-3 ml-1' />
                   </Button>
                 </TableHead>
+                {hasApy && (
+                  <TableHead>
+                    <Button
+                      variant='ghost'
+                      size='sm'
+                      onClick={() => {
+                        handleSort('apy');
+                      }}
+                    >
+                      {config.slug === 'sei' ? 'APR' : 'APY'} <ArrowUpDown className='h-3 w-3 ml-1' />
+                    </Button>
+                  </TableHead>
+                )}
                 <TableHead className='text-right'>Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredAndSorted.map((validator) => (
+              {filteredAndSorted.map((validator) => {
+                const validatorYield = getValidatorYield(config.slug, validator, networkRate);
+                return (
                 <TableRow key={validator.address}>
                   <TableCell className='font-medium max-w-[200px]'>
                     <div className='flex items-center gap-1.5'>
+                      {validator.logo && (
+                        <Image
+                          src={validator.logo}
+                          alt={validator.name}
+                          width={20}
+                          height={20}
+                          className='shrink-0 rounded-full'
+                        />
+                      )}
                       <span className='truncate'>{validator.name}</span>
                       {delegatedAddresses.has(validator.address) && (
                         <Badge className='shrink-0 gap-0.5 text-xs px-1.5 py-0 bg-primary text-primary-foreground hover:bg-primary/90'>
@@ -205,9 +287,18 @@ const ValidatorTable = () => {
                     )}{' '}
                     {config.stakingToken.symbol}
                   </TableCell>
+                  {hasApy && (
+                    <TableCell>
+                      {validatorYield !== null
+                        ? formatPercentage(validatorYield)
+                        : '-'}
+                    </TableCell>
+                  )}
                   <TableCell className='text-right'>
                     <Button
                       size='sm'
+                      variant={validator.delegatable === false ? 'secondary' : 'default'}
+                      disabled={validator.delegatable === false}
                       onClick={() => {
                         handleDelegate(validator);
                       }}
@@ -216,10 +307,11 @@ const ValidatorTable = () => {
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
               {filteredAndSorted.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className='py-8'>
+                  <TableCell colSpan={hasApy ? 6 : 5} className='py-8'>
                     <div className='flex flex-col items-center gap-3'>
                       <Image
                         src='/empty.svg'

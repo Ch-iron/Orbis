@@ -26,7 +26,7 @@ const WalletButton = () => {
   const [addressView, setAddressView] = useState<AddressView>('evm');
 
   // Only show initializing state for cosmos wallet (EVM has no INITIALIZING status)
-  if (walletType !== 'evm' && status === WalletStatus.INITIALIZING) {
+  if (walletType !== 'evm' && walletType !== 'klip' && status === WalletStatus.INITIALIZING) {
     return (
       <Button variant="outline" disabled>
         <Loader2 className="h-4 w-4 animate-spin" />

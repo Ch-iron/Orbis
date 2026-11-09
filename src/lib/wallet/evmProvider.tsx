@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import { WagmiProvider, http } from 'wagmi';
 import { defineChain } from 'viem';
+import { mainnet, sonic, iotex } from 'viem/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RainbowKitProvider, getDefaultConfig } from '@rainbow-me/rainbowkit';
 import { WALLET_CONNECT_PROJECT_ID } from './constants';
@@ -42,13 +43,34 @@ const seiMainnet = defineChain({
   },
 });
 
+// Kaia mainnet EVM chain definition
+const kaiaMainnet = defineChain({
+  id: 8217,
+  name: 'Kaia',
+  nativeCurrency: {
+    name: 'KAIA',
+    symbol: 'KAIA',
+    decimals: 18,
+  },
+  rpcUrls: {
+    default: { http: ['https://public-en.node.kaia.io'] },
+  },
+  blockExplorers: {
+    default: { name: 'KaiaScan', url: 'https://kaiascan.io' },
+  },
+});
+
 const wagmiConfig = getDefaultConfig({
   appName: 'Orbis',
   projectId: WALLET_CONNECT_PROJECT_ID ?? 'placeholder',
-  chains: [xplaMainnet, seiMainnet],
+  chains: [xplaMainnet, seiMainnet, kaiaMainnet, mainnet, sonic, iotex],
   transports: {
     [xplaMainnet.id]: http(),
     [seiMainnet.id]: http(),
+    [kaiaMainnet.id]: http(),
+    [sonic.id]: http(),
+    [iotex.id]: http('https://babel-api.mainnet.iotex.io'),
+    [mainnet.id]: http('https://ethereum-rpc.publicnode.com'),
   },
 });
 

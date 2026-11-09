@@ -5,6 +5,7 @@ import { CHAIN_REGISTRY } from '@/lib/chains/registry';
 const CHAIN_DESCRIPTIONS: Record<string, string> = {
   xpla: 'Gaming & entertainment-focused L1 with EVM compatibility.',
   sei: 'The fastest L1 blockchain optimized for trading.',
+  kaia: "Asia's largest Web3 ecosystem built by Kakao & LINE.",
 };
 
 export function ChainsSection() {
@@ -19,11 +20,11 @@ export function ChainsSection() {
         Stake on leading Cosmos &amp; EVM chains with a single interface.
       </p>
 
-      <div className="flex flex-wrap items-center justify-center gap-8">
+      <div className="flex flex-wrap items-stretch justify-center gap-8">
         {chains.map((chain) => (
           <div
             key={chain.slug}
-            className="flex flex-col items-center gap-3 rounded-xl border bg-card p-8 shadow-sm dark:bg-card/60 dark:shadow-none backdrop-blur-sm transition-transform duration-200 hover:scale-105"
+            className="flex w-[240px] flex-col items-center gap-3 rounded-xl border bg-card p-8 shadow-sm dark:bg-card/60 dark:shadow-none backdrop-blur-sm transition-transform duration-200 hover:scale-105"
           >
             <Image
               src={chain.logo}

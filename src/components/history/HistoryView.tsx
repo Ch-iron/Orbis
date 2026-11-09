@@ -35,7 +35,7 @@ const TX_TYPE_VARIANT: Record<TxHistoryEntry['type'], 'default' | 'secondary' | 
 const ITEMS_PER_PAGE = 20;
 
 const HistoryView = () => {
-  const { isConnected } = useWalletInfo();
+  const { isConnected, walletAddress } = useWalletInfo();
   const { config } = useChain();
   const [currentPage, setCurrentPage] = useState(1);
   const { data, isLoading } = useTxHistory(currentPage);
@@ -51,6 +51,34 @@ const HistoryView = () => {
         <Image src="/empty.svg" alt="Connect wallet" width={120} height={120} />
         <h2 className="text-2xl font-semibold">Connect Your Wallet</h2>
         <p className="text-muted-foreground">Connect your wallet to view transaction history</p>
+      </div>
+    );
+  }
+
+  // Chains with external tx history (e.g. Kaia → Kaiascan)
+  if (config.txHistoryExternalUrl && walletAddress) {
+    const externalUrl = config.txHistoryExternalUrl(walletAddress);
+
+    return (
+      <div className="flex flex-col gap-6">
+        <h1 className="text-2xl font-bold">Transaction History</h1>
+        <Card>
+          <CardContent className="flex flex-col items-center gap-4 py-12">
+            <p className="text-muted-foreground text-center">
+              Transaction history for {config.name} is available on the block explorer.
+            </p>
+            <a
+              href={externalUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button variant="outline" className="gap-2">
+                View on {config.name} Explorer
+                <ExternalLink className="h-4 w-4" />
+              </Button>
+            </a>
+          </CardContent>
+        </Card>
       </div>
     );
   }

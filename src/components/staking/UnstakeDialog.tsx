@@ -57,7 +57,9 @@ const UnstakeDialog = ({ open, onOpenChange, delegation }: UnstakeDialogProps) =
         <DialogHeader>
           <DialogTitle>Unstake from {delegation.validatorName}</DialogTitle>
           <DialogDescription>
-            Unstaking takes {config.unbondingDays} days. Your tokens will be locked during this period.
+            {config.unbondingDays === null
+              ? 'Withdrawal timing depends on the protocol. Your tokens remain locked until finalization.'
+              : `Unstaking takes ${config.unbondingDays} days. Your tokens will be locked during this period.`}
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4 py-4">

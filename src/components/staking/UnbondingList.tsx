@@ -11,7 +11,8 @@ import { formatTokenAmount } from '@/lib/utils/format';
 const MS_PER_HOUR = 1000 * 60 * 60;
 const MS_PER_DAY = MS_PER_HOUR * 24;
 
-const formatRemainingTime = (completionTime: Date): string => {
+const formatRemainingTime = (completionTime: Date | null): string => {
+  if (!completionTime) return 'Awaiting finalization';
   const now = new Date();
   const diffMs = completionTime.getTime() - now.getTime();
 

@@ -3,23 +3,20 @@
 import type { ReactNode } from 'react';
 import { ChainProvider } from '@cosmos-kit/react';
 import { wallets as keplrWallets } from '@cosmos-kit/keplr';
-import { wallets as leapWallets } from '@cosmos-kit/leap';
 import { wallets as cosmostationWallets } from '@cosmos-kit/cosmostation';
 import { chains, assets } from 'chain-registry';
 import '@interchain-ui/react/styles';
 import { WALLET_CONNECT_PROJECT_ID } from './constants';
 
-const xplaChain = chains.find((chain) => chain.chain_id === 'dimension_37-1');
-const xplaAssets = assets.find((assetList) => assetList.chain_name === 'xpla');
+const chainNames = ['xpla', 'celestia', 'dydx'];
+const supportedChains = chains.filter((chain) => chainNames.includes(chain.chain_name));
+const supportedAssets = assets.filter((assetList) => chainNames.includes(assetList.chain_name));
 
-if (!xplaChain || !xplaAssets) {
-  throw new Error('XPLA chain data not found in chain-registry');
+if (supportedChains.length !== chainNames.length || supportedAssets.length !== chainNames.length) {
+  throw new Error('Cosmos chain data not found in chain-registry');
 }
 
-// Cast needed due to cosmjs version mismatch between wallet extensions (0.38) and cosmos-kit core (0.36)
-// The `Algo` type added `ethsecp256k1` in 0.38, causing structural incompatibility at the type level
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const allWallets = [...keplrWallets, ...leapWallets, ...cosmostationWallets] as any[];
+const allWallets = [...keplrWallets, ...cosmostationWallets];
 
 type CosmosProviderProps = {
   children: ReactNode;
@@ -28,8 +25,8 @@ type CosmosProviderProps = {
 const CosmosProvider = ({ children }: CosmosProviderProps) => {
   return (
     <ChainProvider
-      chains={[xplaChain]}
-      assetLists={[xplaAssets]}
+      chains={supportedChains}
+      assetLists={supportedAssets}
       wallets={allWallets}
       walletConnectOptions={
         WALLET_CONNECT_PROJECT_ID
@@ -40,6 +37,12 @@ const CosmosProvider = ({ children }: CosmosProviderProps) => {
       modalTheme={{ defaultTheme: 'dark' }}
       signerOptions={{
         preferredSignType: () => 'amino',
+      }}
+      endpointOptions={{
+        endpoints: {
+          celestia: { rpc: ['https://celestia-rpc.publicnode.com'], rest: ['https://celestia-rest.publicnode.com'] },
+          dydx: { rpc: ['https://dydx-rpc.publicnode.com'], rest: ['https://dydx-rest.publicnode.com'] },
+        },
       }}
     >
       {children}

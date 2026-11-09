@@ -70,14 +70,14 @@ const useBalance = () => {
 };
 
 const useTxHistory = (page: number = 1) => {
-  const { adapter } = useChain();
+  const { adapter, config } = useChain();
   const { walletAddress } = useWalletInfo();
   const selectedChainSlug = useChainStore((state) => state.selectedChainSlug);
 
   return useQuery({
     queryKey: queryKeys.txHistory(selectedChainSlug, walletAddress ?? '', page),
     queryFn: () => adapter.getTransactionHistory(walletAddress!, 20, page),
-    enabled: !!walletAddress,
+    enabled: !!walletAddress && !config.txHistoryExternalUrl,
     staleTime: 60_000,
     placeholderData: keepPreviousData,
   });
