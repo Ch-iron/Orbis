@@ -1,0 +1,6 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import ts from 'typescript';import vm from 'node:vm';
+const c={exports:{}};vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/lib/chains/sui/rewards.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,c);
+const {estimateSuiRewards,estimateSuiApy}=c.exports;
+test('rewards use activation and current exchange rates with integer rounding',()=>{assert.equal(estimateSuiRewards(1000n,{sui:100n,pool:100n},{sui:110n,pool:100n}),100n);assert.equal(estimateSuiRewards(1000n,{sui:110n,pool:100n},{sui:110n,pool:100n}),0n);});
+test('unchanged exchange rate is zero yield and one-year growth matches APY',()=>{assert.equal(estimateSuiApy({sui:100n,pool:100n},{sui:100n,pool:100n},86400000),0);assert.ok(Math.abs(estimateSuiApy({sui:100n,pool:100n},{sui:110n,pool:100n},365*86400000)-0.1)<1e-10);});
+test('zero rate denominators and nonpositive intervals fail',()=>{assert.throws(()=>estimateSuiRewards(1n,{sui:0n,pool:1n},{sui:1n,pool:1n}));assert.throws(()=>estimateSuiApy({sui:1n,pool:1n},{sui:1n,pool:0n},1));assert.throws(()=>estimateSuiApy({sui:1n,pool:1n},{sui:1n,pool:1n},0));});
