@@ -2,6 +2,7 @@
 
 type ValidatorDescription = {
   moniker: string;
+  identity: string;
   details: string;
 };
 

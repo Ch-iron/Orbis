@@ -16,7 +16,7 @@ import type {
   SplitRewardsParams,
   TxHistoryResponse,
 } from '../types';
-import { mapBondStatus } from '../cosmos-utils';
+import { mapBondStatus, resolveKeybaseLogos } from '../cosmos-utils';
 import {
   SEI_STAKING_PRECOMPILE_ADDRESS,
   SEI_DISTRIBUTION_PRECOMPILE_ADDRESS,
@@ -47,17 +47,20 @@ const createSeiAdapter = (
     return Object.fromEntries(entries);
   };
 
+  type ValidatorWithIdentity = Validator & { identity: string };
+
   // Fetch all validators across paginated responses using recursion
   const getValidators = async (): Promise<Validator[]> => {
     const fetchPage = async (
       paginationKey: string | null,
-      accumulated: Validator[],
-    ): Promise<Validator[]> => {
+      accumulated: ValidatorWithIdentity[],
+    ): Promise<ValidatorWithIdentity[]> => {
       const response = await client.getValidators(paginationKey ?? undefined);
 
-      const mapped = response.validators.map((validator) => ({
+      const mapped = response.validators.map((validator): ValidatorWithIdentity => ({
         address: validator.operator_address,
         name: validator.description.moniker,
+        identity: validator.description.identity ?? '',
         logo: null,
         commission: parseFloat(validator.commission.commission_rates.rate),
         votingPower: validator.tokens,
@@ -74,7 +77,15 @@ const createSeiAdapter = (
       return fetchPage(response.pagination.next_key, nextAccumulated);
     };
 
-    return fetchPage(null, []);
+    const validators = await fetchPage(null, []);
+
+    const identities = validators.map((validator) => validator.identity);
+    const logoMap = await resolveKeybaseLogos(identities);
+
+    return validators.map(({ identity, ...validator }) => ({
+      ...validator,
+      logo: logoMap.get(identity) ?? null,
+    }));
   };
 
   // Fetch delegations and resolve validator names
