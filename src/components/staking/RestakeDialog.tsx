@@ -18,12 +18,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { useDelegations, useRewards } from '@/hooks/useStaking';
+import { useBalance, useDelegations, useRewards } from '@/hooks/useStaking';
 import { useChain } from '@/hooks/useChain';
 import { useStakingActions } from '@/hooks/useStakingActions';
 import { formatTokenAmount } from '@/lib/utils/format';
 import { showTxToast } from '@/components/common/TxStatusToast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Info } from 'lucide-react';
 
 type RestakeTargetMode = 'proportional' | 'single';
 
@@ -34,6 +34,7 @@ type RestakeDialogProps = {
 
 const RestakeDialog = ({ open, onOpenChange }: RestakeDialogProps) => {
   const { config } = useChain();
+  const { data: balance } = useBalance();
   const { data: rewards } = useRewards();
   const { data: delegations } = useDelegations();
   const { compound, isReady } = useStakingActions();
@@ -41,6 +42,8 @@ const RestakeDialog = ({ open, onOpenChange }: RestakeDialogProps) => {
   const [targetMode, setTargetMode] = useState<RestakeTargetMode>('proportional');
   const [singleValidator, setSingleValidator] = useState('');
   const { decimals, symbol } = config.stakingToken;
+  const isAutoCompounding = !!config.publicDelegation;
+  const oneToken = BigInt(10) ** BigInt(decimals);
 
   const handleRestake = async () => {
     if (!rewards || rewards.total === '0') {
@@ -75,7 +78,41 @@ const RestakeDialog = ({ open, onOpenChange }: RestakeDialogProps) => {
       }));
     })();
 
-    const result = await compound({ delegations: compoundDelegations }).catch((error) => {
+    // Cap total restake amount to reserve 1 token for gas
+    const cappedDelegations = (() => {
+      const currentBalance = BigInt(balance ?? '0');
+      const totalRewardsAmount = BigInt(rewards.total);
+      const postCompoundBalance = currentBalance + totalRewardsAmount;
+
+      if (postCompoundBalance <= oneToken) {
+        return [];
+      }
+
+      const maxStakeAmount = postCompoundBalance - oneToken;
+      const requestedTotal = compoundDelegations.reduce(
+        (sum, delegation) => sum + BigInt(delegation.amount),
+        BigInt(0),
+      );
+
+      if (requestedTotal <= maxStakeAmount) {
+        return compoundDelegations;
+      }
+
+      // Scale down proportionally
+      return compoundDelegations
+        .map((delegation) => ({
+          validatorAddress: delegation.validatorAddress,
+          amount: ((BigInt(delegation.amount) * maxStakeAmount) / requestedTotal).toString(),
+        }))
+        .filter((delegation) => BigInt(delegation.amount) > BigInt(0));
+    })();
+
+    if (cappedDelegations.length === 0) {
+      setLoading(false);
+      return;
+    }
+
+    const result = await compound({ delegations: cappedDelegations }).catch((error) => {
       console.error('compound error', error);
       return { success: false as const, txHash: null, error: 'Transaction failed' };
     });
@@ -86,6 +123,41 @@ const RestakeDialog = ({ open, onOpenChange }: RestakeDialogProps) => {
       onOpenChange(false);
     }
   };
+
+  if (isAutoCompounding) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Restake (Compound)</DialogTitle>
+            <DialogDescription>
+              Auto-compounding is active on this chain.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-3 py-6">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10">
+              <Info className="h-6 w-6 text-emerald-500" />
+            </div>
+            <p className="text-center text-sm text-muted-foreground">
+              {config.name} uses auto-compounding via PublicDelegation contracts.
+              Your staking rewards are automatically reinvested — no manual
+              restaking is needed.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                onOpenChange(false);
+              }}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

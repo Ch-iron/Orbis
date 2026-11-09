@@ -7,6 +7,7 @@ import { useChain } from './useChain';
 import { useChainStore } from '@/stores/chainStore';
 import { useWalletTypeStore } from '@/stores/walletTypeStore';
 import { useEvmStakingActions } from './useEvmStakingActions';
+import { useKlipStakingActions } from './useKlipStakingActions';
 import { queryKeys } from '@/lib/queryKeys';
 import type {
   DelegateParams,
@@ -161,9 +162,14 @@ const useCosmosStakingActions = () => {
 const useStakingActions = () => {
   const walletType = useWalletTypeStore((state) => state.walletType);
 
-  // Both hooks must always be called (React hook rules)
+  // All hooks must always be called (React hook rules)
   const cosmosActions = useCosmosStakingActions();
   const evmActions = useEvmStakingActions();
+  const klipActions = useKlipStakingActions();
+
+  if (walletType === 'klip') {
+    return klipActions;
+  }
 
   if (walletType === 'evm') {
     return evmActions;

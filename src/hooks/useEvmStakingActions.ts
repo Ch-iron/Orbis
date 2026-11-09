@@ -22,24 +22,16 @@ import type {
 const MAX_CLAIM_RETRIEVE = 100;
 
 const BIGINT_ZERO = BigInt(0);
-const BIGINT_TWO = BigInt(2);
 
-// Floor balance to whole tokens, keeping enough remainder for gas fees.
+// Floor balance to whole tokens, always reserving 1 token for gas fees.
 const calculateSafeStakeAmount = (balance: bigint, oneToken: bigint): bigint => {
   const wholeTokens = (balance / oneToken) * oneToken;
 
-  if (wholeTokens === BIGINT_ZERO) {
+  if (wholeTokens <= oneToken) {
     return BIGINT_ZERO;
   }
 
-  const fractional = balance - wholeTokens;
-  const halfToken = oneToken / BIGINT_TWO;
-
-  if (fractional <= halfToken) {
-    return wholeTokens - oneToken;
-  }
-
-  return wholeTokens;
+  return wholeTokens - oneToken;
 };
 
 // Distribute total stake amount proportionally among validators
@@ -89,9 +81,10 @@ const useEvmStakingActions = () => {
   const { sendTransactionAsync } = useSendTransaction();
   const queryClient = useQueryClient();
 
-  const bech32Prefix = chainConfig?.bech32Prefix ?? 'xpla';
-  const bech32Address = evmAddress ? evmToBech32(evmAddress, bech32Prefix) : '';
+  const bech32Prefix = chainConfig?.bech32Prefix;
+  const bech32Address = evmAddress && bech32Prefix ? evmToBech32(evmAddress, bech32Prefix) : '';
   const precompile = chainConfig?.evmPrecompile;
+  const isPublicDelegation = !!chainConfig?.publicDelegation;
 
   const stakingPrecompileAddress = precompile?.stakingAddress ?? '0x0000000000000000000000000000000000000800';
   const distributionPrecompileAddress = precompile?.distributionAddress ?? '0x0000000000000000000000000000000000000801';
@@ -99,12 +92,15 @@ const useEvmStakingActions = () => {
   const tokenDecimals = chainConfig?.stakingToken.decimals ?? 18;
   const oneToken = BigInt(10) ** BigInt(tokenDecimals);
 
+  // For pure EVM chains (no bech32Prefix), use evmAddress as the query address
+  const queryAddress = bech32Address || (evmAddress ?? '');
+
   const invalidateStakingQueries = useCallback(() => {
     const keys = [
-      queryKeys.delegations(selectedChainSlug, bech32Address),
-      queryKeys.rewards(selectedChainSlug, bech32Address),
-      queryKeys.balance(selectedChainSlug, bech32Address),
-      queryKeys.unbonding(selectedChainSlug, bech32Address),
+      queryKeys.delegations(selectedChainSlug, queryAddress),
+      queryKeys.rewards(selectedChainSlug, queryAddress),
+      queryKeys.balance(selectedChainSlug, queryAddress),
+      queryKeys.unbonding(selectedChainSlug, queryAddress),
     ];
 
     for (const queryKey of keys) {
@@ -112,9 +108,9 @@ const useEvmStakingActions = () => {
     }
 
     queryClient.invalidateQueries({
-      queryKey: ['txHistory', selectedChainSlug, bech32Address],
+      queryKey: ['txHistory', selectedChainSlug, queryAddress],
     });
-  }, [queryClient, selectedChainSlug, bech32Address]);
+  }, [queryClient, selectedChainSlug, queryAddress]);
 
   const waitForTx = useCallback(
     async (txHash: `0x${string}`): Promise<void> => {
@@ -133,9 +129,22 @@ const useEvmStakingActions = () => {
     }, 2000);
   }, [invalidateStakingQueries]);
 
+  const publicDelegationConfig = chainConfig?.publicDelegation;
+
   // Build delegate contract call args based on precompile config
   const buildDelegateCall = useCallback(
     (validatorAddress: string, amount: bigint) => {
+      // Kaia PublicDelegation: call stakeKaia() payable on the validator's PD contract
+      if (isPublicDelegation && publicDelegationConfig) {
+        return writeContractAsync({
+          chainId: evmChainId,
+          address: validatorAddress as `0x${string}`,
+          abi: publicDelegationConfig.stakingAbi as any,
+          functionName: 'stakeKaia',
+          value: amount,
+        });
+      }
+
       const decimalShift = precompile?.delegate.decimalShift ?? 0;
       const evmAmount = decimalShift > 0 ? amount * BigInt(10 ** decimalShift) : amount;
 
@@ -158,7 +167,7 @@ const useEvmStakingActions = () => {
         value: evmAmount,
       });
     },
-    [evmAddress, evmChainId, precompile, stakingPrecompileAddress, writeContractAsync],
+    [evmAddress, evmChainId, isPublicDelegation, publicDelegationConfig, precompile, stakingPrecompileAddress, writeContractAsync],
   );
 
   // Build withdraw rewards contract call based on precompile config
@@ -220,6 +229,17 @@ const useEvmStakingActions = () => {
       }
 
       const txHash = await (() => {
+        // Kaia PublicDelegation: call withdraw(assets, receiver, owner) on the PD contract
+        if (isPublicDelegation && publicDelegationConfig) {
+          return writeContractAsync({
+            chainId: evmChainId,
+            address: params.validatorAddress as `0x${string}`,
+            abi: publicDelegationConfig.stakingAbi as any,
+            functionName: 'withdraw',
+            args: [BigInt(params.amount), evmAddress, evmAddress],
+          });
+        }
+
         if (precompile?.undelegate.includesDelegatorAddress) {
           return writeContractAsync({
             chainId: evmChainId,
@@ -250,7 +270,7 @@ const useEvmStakingActions = () => {
       onTxSuccess();
       return { success: true, txHash, error: null };
     },
-    [evmAddress, evmChainId, precompile, stakingPrecompileAddress, writeContractAsync, waitForTx, onTxSuccess],
+    [evmAddress, evmChainId, isPublicDelegation, publicDelegationConfig, precompile, stakingPrecompileAddress, writeContractAsync, waitForTx, onTxSuccess],
   );
 
   const redelegate = useCallback(
@@ -260,6 +280,18 @@ const useEvmStakingActions = () => {
       }
 
       const txHash = await (() => {
+        // Kaia PublicDelegation: call redelegate(targetStaking, shares) on the source PD contract
+        // Note: Kaia redelegate uses shares, not assets. Convert assets to shares via convertToShares.
+        if (isPublicDelegation && publicDelegationConfig) {
+          return writeContractAsync({
+            chainId: evmChainId,
+            address: params.srcValidatorAddress as `0x${string}`,
+            abi: publicDelegationConfig.stakingAbi as any,
+            functionName: 'redelegate',
+            args: [params.dstValidatorAddress, BigInt(params.amount)],
+          });
+        }
+
         if (precompile?.redelegate.includesDelegatorAddress) {
           return writeContractAsync({
             chainId: evmChainId,
@@ -290,13 +322,18 @@ const useEvmStakingActions = () => {
       onTxSuccess();
       return { success: true, txHash, error: null };
     },
-    [evmAddress, evmChainId, precompile, stakingPrecompileAddress, writeContractAsync, waitForTx, onTxSuccess],
+    [evmAddress, evmChainId, isPublicDelegation, publicDelegationConfig, precompile, stakingPrecompileAddress, writeContractAsync, waitForTx, onTxSuccess],
   );
 
   const withdrawRewards = useCallback(
     async (params: WithdrawParams): Promise<TxResult> => {
       if (!evmAddress) {
         return { success: false, txHash: null, error: 'Wallet not connected' };
+      }
+
+      // Kaia PublicDelegation uses auto-compounding — no separate reward withdrawal
+      if (isPublicDelegation) {
+        return { success: true, txHash: null, error: null };
       }
 
       const txHash = await buildWithdrawCall(params.validatorAddresses).catch((error: Error) => {
@@ -312,7 +349,7 @@ const useEvmStakingActions = () => {
       onTxSuccess();
       return { success: true, txHash, error: null };
     },
-    [evmAddress, buildWithdrawCall, waitForTx, onTxSuccess],
+    [evmAddress, isPublicDelegation, buildWithdrawCall, waitForTx, onTxSuccess],
   );
 
   const send = useCallback(
@@ -345,6 +382,11 @@ const useEvmStakingActions = () => {
     async (params: CompoundParams): Promise<TxResult> => {
       if (!evmAddress || !publicClient) {
         return { success: false, txHash: null, error: 'Wallet not connected' };
+      }
+
+      // Kaia PublicDelegation uses auto-compounding — no manual compound needed
+      if (isPublicDelegation) {
+        return { success: true, txHash: null, error: null };
       }
 
       // Step 1: Claim all rewards
@@ -402,13 +444,18 @@ const useEvmStakingActions = () => {
       onTxSuccess();
       return { success: true, txHash: claimTxHash, error: null };
     },
-    [evmAddress, publicClient, oneToken, buildDelegateCall, buildWithdrawCall, waitForTx, onTxSuccess],
+    [evmAddress, publicClient, isPublicDelegation, oneToken, buildDelegateCall, buildWithdrawCall, waitForTx, onTxSuccess],
   );
 
   const splitRewards = useCallback(
     async (params: SplitRewardsParams): Promise<TxResult> => {
       if (!evmAddress || !publicClient) {
         return { success: false, txHash: null, error: 'Wallet not connected' };
+      }
+
+      // Kaia PublicDelegation uses auto-compounding — split rewards not applicable
+      if (isPublicDelegation) {
+        return { success: true, txHash: null, error: null };
       }
 
       // Step 1: Claim rewards
@@ -487,7 +534,7 @@ const useEvmStakingActions = () => {
       onTxSuccess();
       return { success: true, txHash: claimTxHash, error: null };
     },
-    [evmAddress, evmChainId, publicClient, oneToken, buildDelegateCall, buildWithdrawCall, sendTransactionAsync, waitForTx, onTxSuccess],
+    [evmAddress, evmChainId, publicClient, isPublicDelegation, oneToken, buildDelegateCall, buildWithdrawCall, sendTransactionAsync, waitForTx, onTxSuccess],
   );
 
   return {
