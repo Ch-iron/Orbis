@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-type WalletType = 'cosmos' | 'evm' | null;
+type WalletType = 'avalanche' | 'vechain' | 'cardano' | 'ton' | 'multiversx' | 'near' | 'aptos' | 'sui' | 'iota' | 'algorand' | 'cosmos' | 'native-cosmos' | 'evm' | 'klip' | null;
 
 type WalletTypeStore = {
   walletType: WalletType;

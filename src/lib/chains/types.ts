@@ -2,7 +2,7 @@
 
 import type { StakingAdapter } from './adapter';
 
-type ChainType = 'cosmos' | 'evm';
+type ChainType = 'avalanche' | 'vechain' | 'cardano' | 'ton' | 'multiversx' | 'near' | 'cosmos' | 'evm' | 'algorand' | 'move';
 
 export type EvmPrecompileConfig = {
   stakingAddress: `0x${string}`;
@@ -22,6 +22,11 @@ export type EvmPrecompileConfig = {
   };
 };
 
+export type PublicDelegationConfig = {
+  stakingAbi: readonly Record<string, unknown>[];
+  cnStakingAbi: readonly Record<string, unknown>[];
+};
+
 export type GasConfig = {
   gasPrices: string;
   gasAdjustment: number;
@@ -36,6 +41,19 @@ export type CosmosWalletOption = {
   label: string;
   type: string;
   identifier: string | undefined;
+  // Window property to detect installation (e.g. 'keplr', 'leap', 'cosmostation')
+  injectedFlag?: string;
+};
+
+export type EvmWalletOption = {
+  id: string;
+  label: string;
+  icon: string;
+  downloadUrl: string;
+  connectorId: string;
+  isA2A?: boolean;
+  // window.ethereum provider flag to detect actual installation (e.g. 'isMetaMask')
+  injectedFlag?: string;
 };
 
 export type ChainConfig = {
@@ -53,7 +71,7 @@ export type ChainConfig = {
     symbol: string;
     coingeckoId?: string;
   };
-  unbondingDays: number;
+  unbondingDays: number | null;
   cosmosKitChainName?: string;
   evmChainId?: number;
   evmRpc?: string;
@@ -61,10 +79,14 @@ export type ChainConfig = {
   stakingApyEndpoint?: string;
   gas?: GasConfig;
   evmPrecompile?: EvmPrecompileConfig;
+  publicDelegation?: PublicDelegationConfig;
   addressResolution?: AddressResolutionConfig;
+  txHistoryExternalUrl?: (address: string) => string;
   cosmosWalletOptions?: CosmosWalletOption[];
+  rewardTokens?: Array<{ denom: string; symbol: string; decimals: number }>;
+  evmWalletOptions?: EvmWalletOption[];
   createAdapter: (config: ChainConfig, walletAddress: string, evmAddress: string) => StakingAdapter;
-  fetchApy: (config: ChainConfig) => Promise<number>;
+  fetchApy: (config: ChainConfig) => Promise<number | null>;
 };
 
 export type Validator = {
@@ -75,6 +97,8 @@ export type Validator = {
   votingPower: string;
   status: 'active' | 'inactive' | 'jailed';
   description: string;
+  apy?: number;
+  delegatable?: boolean;
 };
 
 export type Delegation = {
@@ -88,11 +112,12 @@ export type UnbondingEntry = {
   validatorAddress: string;
   validatorName: string;
   amount: string;
-  completionTime: Date;
+  completionTime: Date | null;
 };
 
 export type RewardInfo = {
   total: string;
+  tokens?: Array<{ denom: string; symbol: string; decimals: number; amount: string }>;
   perValidator: Array<{
     validatorAddress: string;
     amount: string;

@@ -94,5 +94,47 @@ const mapBondStatus = (
   return 'jailed';
 };
 
-export { MSG_TYPE_MAP, mapBondStatus, sumWithdrawRewardsFromEvents, extractAmount };
+// Resolve Keybase identity to avatar URL
+// Validators set description.identity to a 16-char Keybase fingerprint
+const resolveKeybaseLogos = async (
+  identities: string[],
+): Promise<Map<string, string>> => {
+  const logoMap = new Map<string, string>();
+  const uniqueIdentities = [...new Set(identities.filter((identity) => identity.length > 0))];
+
+  if (uniqueIdentities.length === 0) {
+    return logoMap;
+  }
+
+  const results = await Promise.all(
+    uniqueIdentities.map(async (identity) => {
+      const response = await fetch(
+        `https://keybase.io/_/api/1.0/user/lookup.json?key_suffix=${encodeURIComponent(identity)}&fields=pictures`,
+      ).catch(() => null);
+
+      if (!response?.ok) {
+        return null;
+      }
+
+      const data = await response.json().catch(() => null);
+      const pictureUrl = data?.them?.[0]?.pictures?.primary?.url as string | undefined;
+
+      if (!pictureUrl) {
+        return null;
+      }
+
+      return { identity, url: pictureUrl };
+    }),
+  );
+
+  for (const result of results) {
+    if (result) {
+      logoMap.set(result.identity, result.url);
+    }
+  }
+
+  return logoMap;
+};
+
+export { MSG_TYPE_MAP, mapBondStatus, sumWithdrawRewardsFromEvents, extractAmount, resolveKeybaseLogos };
 export type { TxEvent };
