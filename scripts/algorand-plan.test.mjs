@@ -1,0 +1,12 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import ts from 'typescript';
+import vm from 'node:vm';
+const c={exports:{}};vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/features/algorand-staking/plan.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,c);
+const {parseAlgoAmount,validateRetiDeposit,validateRetiWithdrawal}=c.exports;
+const validator={minimum:1000000n,gatingType:0,sunsettingOn:0n,pools:[{}]};
+test('ALGO amount preserves micro units without rounding',()=>{assert.equal(parseAlgoAmount('1.000001'),1000001n);for(const value of ['','0','-1','1e6','0.0000001',' 1','NaN'])assert.throws(()=>parseAlgoAmount(value));});
+test('new stake observes minimum; existing stake can top up',()=>{assert.throws(()=>validateRetiDeposit(validator,1n,false,1));validateRetiDeposit(validator,1000000n,false,1);validateRetiDeposit(validator,1n,true,1);});
+test('gated, closed and pool-less validators cannot receive deposits',()=>{for(const change of [{gatingType:1},{sunsettingOn:1n},{pools:[]}])assert.throws(()=>validateRetiDeposit({...validator,...change},1000000n,false,2));});
+test('withdrawal cannot use zero (contract means all), exceed balance or leave dust',()=>{for(const amount of [0n,300n,150n])assert.throws(()=>validateRetiWithdrawal(amount,200n,100n));validateRetiWithdrawal(100n,200n,100n);validateRetiWithdrawal(200n,200n,100n);});

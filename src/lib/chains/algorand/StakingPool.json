@@ -1,0 +1,248 @@
+{
+  "name": "StakingPool",
+  "desc": "",
+  "methods": [
+    {
+      "name": "gas",
+      "desc": "gas is a dummy no-op call that can be used to pool-up resource references and opcode cost",
+      "args": [],
+      "returns": {
+        "type": "void"
+      },
+      "actions": {
+        "create": [],
+        "call": [
+          "NoOp"
+        ]
+      }
+    },
+    {
+      "name": "removeStake",
+      "desc": "Removes stake on behalf of caller (removing own stake).  If any token rewards exist, those are always sent in\nfull. Also notifies the validator contract for this pools validator of the staker / balance changes.",
+      "args": [
+        {
+          "name": "staker",
+          "type": "address",
+          "desc": "account to remove.  normally same as sender, but the validator owner or manager can also call\nthis to remove the specified staker explicitly. The removed stake MUST only go to the staker of course.  This is\nso a validator can shut down a poool and refund the stakers.  It can also be used to kick out stakers who no longer\nmeet the gating requirements (determined by the node daemon)."
+        },
+        {
+          "name": "amountToUnstake",
+          "type": "uint64",
+          "desc": "The amount of stake to be removed.  Specify 0 to remove all stake."
+        }
+      ],
+      "returns": {
+        "type": "void"
+      },
+      "actions": {
+        "create": [],
+        "call": [
+          "NoOp"
+        ]
+      }
+    },
+    {
+      "name": "claimTokens",
+      "desc": "Claims all the available reward tokens a staker has available, sending their entire balance to the staker from\npool 1 (either directly, or via validator-pool1 to pay it out)\nAlso notifies the validator contract for this pools validator of the staker / balance changes.",
+      "args": [],
+      "returns": {
+        "type": "void"
+      },
+      "actions": {
+        "create": [],
+        "call": [
+          "NoOp"
+        ]
+      }
+    },
+    {
+      "name": "getStakerInfo",
+      "desc": "Retrieves the staked information for a given staker.",
+      "readonly": true,
+      "args": [
+        {
+          "name": "staker",
+          "type": "address",
+          "desc": "The address of the staker."
+        }
+      ],
+      "returns": {
+        "type": "(address,uint64,uint64,uint64,uint64)",
+        "desc": "StakedInfo - The staked information for the given staker.",
+        "struct": "StakedInfo"
+      },
+      "actions": {
+        "create": [],
+        "call": [
+          "NoOp"
+        ]
+      }
+    }
+  ],
+  "arcs": [
+    4,
+    56
+  ],
+  "structs": {
+    "StakedInfo": [
+      {
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "name": "balance",
+        "type": "uint64"
+      },
+      {
+        "name": "totalRewarded",
+        "type": "uint64"
+      },
+      {
+        "name": "rewardTokenBalance",
+        "type": "uint64"
+      },
+      {
+        "name": "entryRound",
+        "type": "uint64"
+      }
+    ],
+    "PoolTokenPayoutRatio": [
+      {
+        "name": "poolPctOfWhole",
+        "type": "uint64[24]"
+      },
+      {
+        "name": "updatedForPayout",
+        "type": "uint64"
+      }
+    ],
+    "ValidatorPoolKey": [
+      {
+        "name": "id",
+        "type": "uint64"
+      },
+      {
+        "name": "poolId",
+        "type": "uint64"
+      },
+      {
+        "name": "poolAppId",
+        "type": "uint64"
+      }
+    ]
+  },
+  "state": {
+    "schema": {
+      "global": {
+        "bytes": 3,
+        "ints": 11
+      },
+      "local": {
+        "bytes": 0,
+        "ints": 0
+      }
+    },
+    "keys": {
+      "global": {
+        "creatingValidatorContractAppId": {
+          "key": "Y3JlYXRvckFwcA==",
+          "keyType": "AVMBytes",
+          "valueType": "uint64"
+        },
+        "validatorId": {
+          "key": "dmFsaWRhdG9ySWQ=",
+          "keyType": "AVMBytes",
+          "valueType": "uint64"
+        },
+        "poolId": {
+          "key": "cG9vbElk",
+          "keyType": "AVMBytes",
+          "valueType": "uint64"
+        },
+        "numStakers": {
+          "key": "bnVtU3Rha2Vycw==",
+          "keyType": "AVMBytes",
+          "valueType": "uint64"
+        },
+        "totalAlgoStaked": {
+          "key": "c3Rha2Vk",
+          "keyType": "AVMBytes",
+          "valueType": "uint64"
+        },
+        "minEntryStake": {
+          "key": "bWluRW50cnlTdGFrZQ==",
+          "keyType": "AVMBytes",
+          "valueType": "uint64"
+        },
+        "lastPayout": {
+          "key": "bGFzdFBheW91dA==",
+          "keyType": "AVMBytes",
+          "valueType": "uint64"
+        },
+        "epochNumber": {
+          "key": "ZXBvY2hOdW1iZXI=",
+          "keyType": "AVMBytes",
+          "valueType": "uint64"
+        },
+        "algodVer": {
+          "key": "YWxnb2RWZXI=",
+          "keyType": "AVMBytes",
+          "valueType": "AVMBytes"
+        },
+        "roundsPerDay": {
+          "key": "cm91bmRzUGVyRGF5",
+          "keyType": "AVMBytes",
+          "valueType": "uint64"
+        },
+        "binRoundStart": {
+          "key": "YmluUm91bmRTdGFydA==",
+          "keyType": "AVMBytes",
+          "valueType": "uint64"
+        },
+        "stakeAccumulator": {
+          "key": "c3Rha2VBY2N1bXVsYXRvcg==",
+          "keyType": "AVMBytes",
+          "valueType": "uint128"
+        },
+        "rewardAccumulator": {
+          "key": "cmV3YXJkQWNjdW11bGF0b3I=",
+          "keyType": "AVMBytes",
+          "valueType": "uint64"
+        },
+        "weightedMovingAverage": {
+          "key": "ZXdtYQ==",
+          "keyType": "AVMBytes",
+          "valueType": "uint128"
+        }
+      },
+      "local": {},
+      "box": {
+        "stakers": {
+          "key": "c3Rha2Vycw==",
+          "keyType": "AVMBytes",
+          "valueType": "(address,uint64,uint64,uint64,uint64)[200]"
+        }
+      }
+    },
+    "maps": {
+      "global": {},
+      "local": {},
+      "box": {}
+    }
+  },
+  "bareActions": {
+    "create": [],
+    "call": []
+  },
+  "templateVariables": {
+    "nfdRegistryAppId": {
+      "type": "uint64"
+    }
+  },
+  "scratchVariables": {
+    "nfdRegistryAppId": {
+      "type": "uint64",
+      "slot": 200
+    }
+  }
+}
