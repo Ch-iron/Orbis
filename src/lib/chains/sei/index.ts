@@ -24,7 +24,7 @@ const SEI_CONFIG: ChainConfig = {
   slug: 'sei',
   name: 'Sei',
   type: 'cosmos',
-  logo: '/chains/sei.svg',
+  logo: '/chains/sei.png',
   rpc: 'https://rpc.sei-apis.com',
   lcd: 'https://rest.sei-apis.com',
   explorer: 'https://seiscan.io',

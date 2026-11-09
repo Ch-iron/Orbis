@@ -52,7 +52,7 @@ const XPLA_CONFIG: ChainConfig = {
   slug: 'xpla',
   name: 'XPLA',
   type: 'cosmos',
-  logo: '/chains/xpla.png',
+  logo: '/chains/xpla.svg',
   rpc: 'https://rpc.xpla.io',
   lcd: 'https://dimension-lcd.xpla.dev',
   explorer: 'https://explorer.xpla.io/mainnet',

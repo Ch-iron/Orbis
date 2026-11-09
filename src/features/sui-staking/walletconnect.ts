@@ -9,7 +9,7 @@ let initializing: Promise<SignClient> | undefined;
 
 async function getClient() {
   if (!WALLET_CONNECT_PROJECT_ID) throw new Error('WalletConnect 프로젝트 ID가 설정되지 않았습니다.');
-  if (!initializing) initializing = SignClient.init({ projectId: WALLET_CONNECT_PROJECT_ID, customStoragePrefix: 'orbis-sui', metadata: { name: 'Orbis', description: 'Sui staking', url: window.location.origin, icons: [`${window.location.origin}/chains/sui.svg`] } }).then((client) => {
+  if (!initializing) initializing = SignClient.init({ projectId: WALLET_CONNECT_PROJECT_ID, customStoragePrefix: 'orbis-sui', metadata: { name: 'Orbis', description: 'Sui staking', url: window.location.origin, icons: [`${window.location.origin}/chains/sui.png`] } }).then((client) => {
     const clear = () => useSuiWalletConnect.setState({ connection: null, uri: null });
     client.on('session_delete', clear);
     client.on('session_expire', clear);

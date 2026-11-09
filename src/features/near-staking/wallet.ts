@@ -10,7 +10,7 @@ export function getNearSelector() {
 async function initialize() {
   const [{ setupWalletSelector }, { setupNearSnap }, { setupWalletConnect }] = await Promise.all([import('@near-wallet-selector/core'), import('@near-wallet-selector/near-snap'), import('@near-wallet-selector/wallet-connect')]);
   const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
-  const selector = await setupWalletSelector({ network: 'mainnet', modules: [setupNearSnap(), ...(projectId ? [setupWalletConnect({ projectId, metadata: { name: 'Orbis', description: 'NEAR staking', url: window.location.origin, icons: [`${window.location.origin}/chains/near.svg`] } })] : [])] });
+  const selector = await setupWalletSelector({ network: 'mainnet', modules: [setupNearSnap(), ...(projectId ? [setupWalletConnect({ projectId, metadata: { name: 'Orbis', description: 'NEAR staking', url: window.location.origin, icons: [`${window.location.origin}/chains/near.png`] } })] : [])] });
   selector.store.observable.subscribe((state) => useNearWallet.setState({ address: state.accounts.find((account) => account.active)?.accountId ?? null }));
   selector.on('uriChanged', ({ uri }) => useNearWallet.setState({ uri }));
   selector.on('networkChanged', ({ networkId }) => { if (networkId !== 'mainnet') useNearWallet.setState({ address: null }); });

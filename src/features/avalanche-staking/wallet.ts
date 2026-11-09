@@ -39,7 +39,7 @@ export async function connectAvalancheWallet(kind: 'core' | 'ledger' | 'walletco
     } };
   } else {
     if (!WALLET_CONNECT_PROJECT_ID) throw new Error('WalletConnect 프로젝트 ID가 필요합니다.');
-    const client = await SignClient.init({ projectId: WALLET_CONNECT_PROJECT_ID, customStoragePrefix: 'orbis-avalanche', metadata: { name: 'Orbis', description: 'Avalanche P-Chain staking', url: window.location.origin, icons: [`${window.location.origin}/chains/avalanche.svg`] } });
+    const client = await SignClient.init({ projectId: WALLET_CONNECT_PROJECT_ID, customStoragePrefix: 'orbis-avalanche', metadata: { name: 'Orbis', description: 'Avalanche P-Chain staking', url: window.location.origin, icons: [`${window.location.origin}/chains/avalanche.png`] } });
     client.on('session_delete', clear); client.on('session_update', clear); client.on('session_expire', clear); client.on('session_event', clear);
     const { uri, approval } = await client.connect({ requiredNamespaces: { avax: { chains: [CHAIN], methods: ['avalanche_sendTransaction'], events: ['accountsChanged', 'chainChanged'] } } });
     useAvalancheWallet.setState({ uri: uri ?? null });

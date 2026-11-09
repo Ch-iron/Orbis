@@ -17,7 +17,7 @@ export async function connectMultiversxWallet(kind: 'extension' | 'walletconnect
     const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
     if (!projectId) throw new Error('WalletConnect 연결 설정이 필요합니다.');
     const { WalletConnectV2Provider } = await import('@multiversx/sdk-wallet-connect-provider');
-    const wallet = new WalletConnectV2Provider({ onClientLogin: () => {}, onClientLogout: () => useMultiversxWallet.setState({ address: null }), onClientEvent: () => useMultiversxWallet.setState({ address: null }) }, '1', 'wss://relay.walletconnect.com', projectId, { metadata: { name: 'Orbis', description: 'MultiversX staking', url: window.location.origin, icons: [`${window.location.origin}/chains/multiversx.svg`] } });
+    const wallet = new WalletConnectV2Provider({ onClientLogin: () => {}, onClientLogout: () => useMultiversxWallet.setState({ address: null }), onClientEvent: () => useMultiversxWallet.setState({ address: null }) }, '1', 'wss://relay.walletconnect.com', projectId, { metadata: { name: 'Orbis', description: 'MultiversX staking', url: window.location.origin, icons: [`${window.location.origin}/chains/multiversx.png`] } });
     await wallet.init();
     const { uri, approval } = await wallet.connect();
     useMultiversxWallet.setState({ uri: uri ?? null });

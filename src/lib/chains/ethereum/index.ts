@@ -4,7 +4,7 @@ import { createEthereumAdapter } from './adapter';
 
 export const ETHEREUM_CONFIG: ChainConfig = {
   id: 'ethereum-mainnet', slug: 'ethereum', name: 'Ethereum', type: 'evm',
-  logo: '/chains/ethereum.svg',
+  logo: '/chains/ethereum.png',
   rpc: 'https://ethereum-rpc.publicnode.com', lcd: '', explorer: 'https://etherscan.io',
   stakingToken: { denom: 'wei', decimals: 18, symbol: 'ETH', coingeckoId: 'ethereum' },
   unbondingDays: null,
