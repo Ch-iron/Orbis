@@ -29,7 +29,7 @@ test('history placeholders never carry transactions across accounts or chains',(
  assert.equal(query.placeholderData(old,{queryKey:['txHistory','sei','owner',1]}),old);
 });
 function chart(query) {
- const imports={'react/jsx-runtime':jsx,'@/components/ui/card':card,'@/components/ui/chart':{ChartContainer:wrapper,ChartTooltip:wrapper,ChartTooltipContent:wrapper},recharts:new Proxy({},{get:()=>wrapper}),'@/hooks/useDelegations':{},'@/hooks/useStaking':{useDelegations:()=>query},'@/hooks/useChain':{useChain:()=>({config:{stakingToken:{symbol:'SEI',decimals:6}}})},'@/hooks/useTokenPrice':{useTokenPrice:()=>({price:2,isLoading:false})},'@/lib/utils/format':{formatTokenAmount:(s)=>String(Number(s)/1e6)},'@/components/ui/skeleton':{Skeleton:wrapper}};
+ const imports={'react/jsx-runtime':jsx,'@/components/ui/card':card,'@/components/ui/chart':{ChartContainer:wrapper,ChartTooltip:wrapper,ChartTooltipContent:wrapper},recharts:new Proxy({},{get:()=>wrapper}),'@/hooks/useDelegations':{},'@/hooks/useStaking':{useDelegations:()=>query},'@/hooks/useChain':{useChain:()=>({config:{stakingToken:{symbol:'SEI',decimals:6}}})},'@/hooks/useTokenPrice':{useTokenPrice:()=>({price:2,isLoading:false})},'@/lib/utils/format':{formatTokenAmount:(s)=>String(Number(s)/1e6)},'@/components/ui/skeleton':{Skeleton:wrapper},'@/features/staking/allocation':load('src/features/staking/allocation.ts',{})};
  return renderToStaticMarkup(React.createElement(load('src/components/portfolio/StakingChart.tsx',imports).StakingChart));
 }
 test('staking overview distinguishes failed and empty data without fabricated history',()=>{
@@ -42,6 +42,12 @@ function nodes(element,type) {
  if(Array.isArray(element))return element.flatMap(item=>nodes(item,type));
  return [...(element.type===type?[element]:[]),...nodes(element.props?.children,type)];
 }
+test('staking allocation legend lists named slices, Other and shares as text',()=>{
+ const position=(name,amount)=>({validatorAddress:name,validatorName:name,amount,rewards:'0'});
+ const html=chart({data:[position('Alpha','4000000'),position('Beta','3000000'),position('Gamma','2000000'),position('Delta','600000'),position('Echo','400000')]});
+ for(const text of ['Alpha','Beta','Gamma','Other (2 positions)','40.00%','10.00%','1 SEI'])assert.ok(html.includes(text),text);
+ assert.doesNotMatch(html,/Delta|Echo/);
+});
 test('mobile navigation closes its drawer when a destination is selected',()=>{
  let closed=0; const Link=wrapper;
  const imports={'react/jsx-runtime':jsx,'next/link':Link,'next/navigation':{usePathname:()=>'/overview'},'next/image':wrapper,'@/lib/utils':{cn:(...s)=>s.join(' ')},'@/stores/chainStore':{useChainStore:f=>f({selectedChainSlug:'sei'})},'@/lib/navigation':{getNavItems:()=>[{label:'Overview',href:'/overview',group:'global',icon:wrapper},{label:'Staking',href:'/stake/sei',group:'chain',icon:wrapper}]},'@/components/common/ChainSelector':{SidebarChainSelector:wrapper}};

@@ -72,6 +72,12 @@
   --chart-3: oklch(0.60 0.20 155);
   --chart-4: oklch(0.50 0.12 230);
   --chart-5: oklch(0.65 0.10 195);
+  /* Staking allocation donut: every slice touches every other, so these are validated as all pairs
+     (dataviz palette validator). The teal --chart-* steps are too close to tell apart as slices. */
+  --allocation-1: #2a78d6;
+  --allocation-2: #eb6834;
+  --allocation-3: #1baf7a;
+  --allocation-other: #6b6a65;
   --sidebar: oklch(0.97 0.01 230);
   --sidebar-foreground: oklch(0.15 0.03 230);
   --sidebar-primary: oklch(0.50 0.15 195);
@@ -106,6 +112,10 @@
   --chart-3: oklch(0.72 0.19 155);
   --chart-4: oklch(0.55 0.12 230);
   --chart-5: oklch(0.78 0.10 195);
+  --allocation-1: #3987e5;
+  --allocation-2: #d95926;
+  --allocation-3: #199e70;
+  --allocation-other: #6e6d68;
   --sidebar: oklch(0.14 0.03 230);
   --sidebar-foreground: oklch(0.93 0.01 195);
   --sidebar-primary: oklch(0.72 0.15 195);
