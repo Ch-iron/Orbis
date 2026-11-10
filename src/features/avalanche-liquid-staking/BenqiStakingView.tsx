@@ -1,10 +1,9 @@
 'use client';
 
+import { useState } from 'react';
+import { WalletSelectDialog } from '@/components/layout/WalletSelectDialog';
 import { formatEther } from 'viem';
 import { avalanche } from 'viem/chains';
-import { useAccount, useSwitchChain } from 'wagmi';
-import { useConnectModal } from '@rainbow-me/rainbowkit';
-import { useWalletTypeStore } from '@/stores/walletTypeStore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LiquidStakeForm } from '@/features/liquid-staking/LiquidStakeForm';
@@ -12,16 +11,14 @@ import { useBenqiStaking } from './useBenqiStaking';
 
 export function BenqiStakingView() {
   const staking = useBenqiStaking();
-  const { isConnected } = useAccount();
-  const { openConnectModal } = useConnectModal();
-  const { switchChain, error: networkError } = useSwitchChain();
-  const setWalletType = useWalletTypeStore((state) => state.setWalletType);
+  const [walletOpen, setWalletOpen] = useState(false);
   const position = staking.position.data;
-  const error = staking.error ?? staking.position.error?.message ?? networkError?.message;
+  const error = staking.error ?? staking.position.error?.message;
   const ready = staking.connected && staking.correctNetwork && !!position && !staking.position.error;
   return <div className="space-y-6">
     <div><h2 className="text-2xl font-bold">BENQI</h2><p className="text-muted-foreground">Stake AVAX on Avalanche C-Chain to receive sAVAX. P-Chain staking and balances are separate.</p></div>
-    {(!staking.connected || !staking.correctNetwork) && <Button onClick={() => { setWalletType('evm'); if (isConnected) switchChain({ chainId: avalanche.id }); else openConnectModal?.(); }}>Connect Avalanche C-Chain Wallet</Button>}
+    {(!staking.connected || !staking.correctNetwork) && <Button onClick={() => setWalletOpen(true)}>Connect Avalanche C-Chain Wallet</Button>}
+    <WalletSelectDialog open={walletOpen} onOpenChange={setWalletOpen} evmChainId={avalanche.id} />
     {staking.position.isLoading && <p role="status">Loading BENQI position…</p>}
     {error && <p role="alert" className="text-destructive">{error}</p>}
     <Card><CardHeader><CardTitle>Your liquid stake</CardTitle></CardHeader><CardContent className="space-y-2">

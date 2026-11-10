@@ -11,7 +11,6 @@ import { useWallet as useAlgoWallet } from '@txnlab/use-wallet-react';
 import { useCurrentAccount as useIotaAccount, useDisconnectWallet as useIotaDisconnect } from '@iota/dapp-kit';
 import { useCurrentAccount as useSuiAccount, useDAppKit } from '@mysten/dapp-kit-react';
 import { useSuiWalletConnect, disconnectSuiWalletConnect } from '@/features/sui-staking/walletconnect';
-import { useEffect } from 'react';
 import { useChain as useCosmosKitChain } from '@cosmos-kit/react';
 import {
   useWallet,
@@ -33,7 +32,7 @@ const useWalletInfo = () => {
   const connectedWallet = useConnectedWallet();
 
   const { address: evmAddress, isConnected: isEvmConnected } = useAccount();
-  const { disconnect: wagmiDisconnect } = useEvmDisconnect();
+  const { disconnectAsync: wagmiDisconnect } = useEvmDisconnect();
 
   const walletType = useWalletTypeStore((state) => state.walletType);
   const setWalletType = useWalletTypeStore((state) => state.setWalletType);
@@ -58,13 +57,6 @@ const useWalletInfo = () => {
   const algo = useAlgoWallet();
   const nativeCosmos = useCosmosKitChain(chainConfig?.cosmosKitChainName ?? 'celestia', false);
 
-  // Sync walletType when wagmi restores a session but store is out of sync
-  useEffect(() => {
-    if (isEvmConnected && evmAddress && walletType !== 'evm' && walletType !== 'klip' && walletType !== 'native-cosmos' && walletType !== 'algorand' && walletType !== 'iota' && walletType !== 'sui' && walletType !== 'aptos' && walletType !== 'near' && walletType !== 'multiversx' && walletType !== 'ton' && walletType !== 'cardano' && walletType !== 'vechain' && walletType !== 'avalanche') {
-      setWalletType('evm');
-    }
-  }, [isEvmConnected, evmAddress, walletType, setWalletType]);
-
   const bech32Prefix = chainConfig?.bech32Prefix ?? 'xpla';
 
   // On-chain address association query (must be called before any return)
@@ -80,7 +72,7 @@ const useWalletInfo = () => {
 
   if (chainConfig?.slug === 'avalanche') {
     const connected = walletType === 'avalanche' && !!avalanche;
-    return { status: connected ? WalletStatus.WALLET_CONNECTED : WalletStatus.WALLET_NOT_CONNECTED, isConnected: connected, walletAddress: connected ? avalanche.address : null, evmAddress: null, walletType: 'avalanche' as WalletType, connect, disconnect: () => { void disconnectAvalancheWallet(); setWalletType(null); }, availableConnections, availableInstallations, connectedWallet: null };
+    return { status: connected ? WalletStatus.WALLET_CONNECTED : WalletStatus.WALLET_NOT_CONNECTED, isConnected: connected, walletAddress: connected ? avalanche.address : null, evmAddress: null, walletType: 'avalanche' as WalletType, connect, disconnect: async () => { setWalletType(null); await disconnectAvalancheWallet(); }, availableConnections, availableInstallations, connectedWallet: null };
   }
 
   if (chainConfig?.slug === 'cardano') {
@@ -111,7 +103,7 @@ const useWalletInfo = () => {
       status: connected ? WalletStatus.WALLET_CONNECTED : WalletStatus.WALLET_NOT_CONNECTED,
       isConnected: connected, walletAddress: connected ? tonAddress : null,
       evmAddress: null, walletType: 'ton' as WalletType, connect,
-      disconnect: () => { void tonUi.disconnect(); setWalletType(null); },
+      disconnect: async () => { setWalletType(null); await tonUi.disconnect(); },
       availableConnections, availableInstallations, connectedWallet: null,
     };
   }
@@ -122,7 +114,7 @@ const useWalletInfo = () => {
       status: connected ? WalletStatus.WALLET_CONNECTED : WalletStatus.WALLET_NOT_CONNECTED,
       isConnected: connected, walletAddress: connected ? multiversxAddress : null,
       evmAddress: null, walletType: 'multiversx' as WalletType, connect,
-      disconnect: () => { void disconnectMultiversxWallet(); setWalletType(null); },
+      disconnect: async () => { setWalletType(null); await disconnectMultiversxWallet(); },
       availableConnections, availableInstallations, connectedWallet: null,
     };
   }
@@ -133,42 +125,42 @@ const useWalletInfo = () => {
       status: connected ? WalletStatus.WALLET_CONNECTED : WalletStatus.WALLET_NOT_CONNECTED,
       isConnected: connected, walletAddress: connected ? nearAddress : null,
       evmAddress: null, walletType: 'near' as WalletType, connect,
-      disconnect: () => { void disconnectNearWallet(); setWalletType(null); },
+      disconnect: async () => { setWalletType(null); await disconnectNearWallet(); },
       availableConnections, availableInstallations, connectedWallet: null,
     };
   }
 
   if (chainConfig?.slug === 'aptos') {
     const address = aptosWallet.account?.address.toString();
-    const connected = walletType === 'aptos' && aptosWallet.connected && !!address;
+    const connected = walletType === 'aptos' && aptosWallet.connected && Number(aptosWallet.network?.chainId) === 1 && !!address;
     return {
       status: connected ? WalletStatus.WALLET_CONNECTED : WalletStatus.WALLET_NOT_CONNECTED,
       isConnected: connected, walletAddress: connected ? address : null,
       evmAddress: null, walletType: 'aptos' as WalletType, connect,
-      disconnect: () => { aptosWallet.disconnect(); setWalletType(null); },
+      disconnect: async () => { setWalletType(null); await aptosWallet.disconnect(); },
       availableConnections, availableInstallations, connectedWallet: null,
     };
   }
 
   if (chainConfig?.slug === 'sui') {
-    const address = suiWalletConnect?.address ?? suiAccount?.address;
+    const address = suiWalletConnect?.address ?? (suiAccount?.chains.includes('sui:mainnet') ? suiAccount.address : null);
     const connected = walletType === 'sui' && !!address;
     return {
       status: connected ? WalletStatus.WALLET_CONNECTED : WalletStatus.WALLET_NOT_CONNECTED,
       isConnected: connected, walletAddress: connected ? address : null,
       evmAddress: null, walletType: 'sui' as WalletType, connect,
-      disconnect: () => { void suiKit.disconnectWallet(); void disconnectSuiWalletConnect(); setWalletType(null); },
+      disconnect: async () => { setWalletType(null); await Promise.all([suiKit.disconnectWallet(), disconnectSuiWalletConnect()]); },
       availableConnections, availableInstallations, connectedWallet: null,
     };
   }
 
   if (chainConfig?.slug === 'iota') {
-    const connected = walletType === 'iota' && !!iotaAccount;
+    const connected = walletType === 'iota' && !!iotaAccount && iotaAccount.chains.includes('iota:mainnet');
     return {
       status: connected ? WalletStatus.WALLET_CONNECTED : WalletStatus.WALLET_NOT_CONNECTED,
       isConnected: connected, walletAddress: connected ? iotaAccount.address : null,
       evmAddress: null, walletType: 'iota' as WalletType, connect,
-      disconnect: () => { iotaDisconnect.mutate(); setWalletType(null); },
+      disconnect: async () => { setWalletType(null); await iotaDisconnect.mutateAsync(); },
       availableConnections, availableInstallations, connectedWallet: null,
     };
   }
@@ -179,7 +171,7 @@ const useWalletInfo = () => {
       status: connected ? WalletStatus.WALLET_CONNECTED : WalletStatus.WALLET_NOT_CONNECTED,
       isConnected: connected, walletAddress: connected ? algo.activeAddress : null,
       evmAddress: null, walletType: 'algorand' as WalletType, connect,
-      disconnect: () => { void algo.activeWallet?.disconnect(); setWalletType(null); },
+      disconnect: async () => { setWalletType(null); await algo.activeWallet?.disconnect(); },
       availableConnections, availableInstallations, connectedWallet: null,
     };
   }
@@ -193,13 +185,13 @@ const useWalletInfo = () => {
       evmAddress: null,
       walletType: 'native-cosmos' as WalletType,
       connect,
-      disconnect: () => { void nativeCosmos.disconnect(); setWalletType(null); },
+      disconnect: async () => { setWalletType(null); await nativeCosmos.disconnect(); },
       availableConnections, availableInstallations, connectedWallet: null,
     };
   }
 
   // Klip wallet: return klipAddress directly
-  if (walletType === 'klip' && klipAddress) {
+  if (chainConfig?.slug === 'kaia' && walletType === 'klip' && klipAddress) {
     return {
       status: WalletStatus.WALLET_CONNECTED,
       isConnected: true,
@@ -242,9 +234,9 @@ const useWalletInfo = () => {
       evmAddress,
       walletType: 'evm' as WalletType,
       connect,
-      disconnect: () => {
-        wagmiDisconnect();
+      disconnect: async () => {
         setWalletType(null);
+        await wagmiDisconnect();
       },
       availableConnections,
       availableInstallations,
@@ -252,11 +244,11 @@ const useWalletInfo = () => {
     };
   }
 
-  const isCosmosConnected = status === WalletStatus.WALLET_CONNECTED;
-  const walletAddress = connectedWallet?.xplaAddress ?? null;
+  const isCosmosConnected = chainConfig?.slug === 'xpla' && walletType === 'cosmos' && status === WalletStatus.WALLET_CONNECTED;
+  const walletAddress = isCosmosConnected ? connectedWallet?.xplaAddress ?? null : null;
 
   return {
-    status,
+    status: walletType === 'cosmos' && chainConfig?.slug === 'xpla' ? status : WalletStatus.WALLET_NOT_CONNECTED,
     isConnected: isCosmosConnected,
     walletAddress,
     evmAddress: null as string | null,
@@ -268,7 +260,7 @@ const useWalletInfo = () => {
     },
     availableConnections,
     availableInstallations,
-    connectedWallet,
+    connectedWallet: isCosmosConnected ? connectedWallet : null,
   };
 };
 

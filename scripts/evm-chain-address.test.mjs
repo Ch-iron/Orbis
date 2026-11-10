@@ -40,3 +40,21 @@ test('overview uses 0x for EVM, associated address for Sei and no fabricated nat
  assert.equal(chains[2].address,'sei1associated');
  assert.equal(chains[3].address,null);
 });
+
+test('overview ignores dormant XPLA sessions when another wallet or no wallet is selected', () => {
+ const previousWallet = imports['@/stores/walletTypeStore'];
+ const previousCosmos = imports['@xpla/wallet-provider'];
+ imports['@xpla/wallet-provider'] = { ...previousCosmos, useWallet: () => ({ status: 'CONNECTED' }), useConnectedWallet: () => ({ xplaAddress: 'xpla1old' }) };
+ try {
+  for (const walletType of [null, 'evm']) {
+   imports['@/stores/walletTypeStore'] = { useWalletTypeStore: f => f({ walletType }) };
+   const previousEvm = imports.wagmi;
+   imports.wagmi = { useAccount: () => ({ isConnected: false }) };
+   const current = { exports: {}, require: name => imports[name] };
+   vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/hooks/useMultiChainStaking.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, current);
+   const result = current.exports.useMultiChainStaking();
+   imports.wagmi = previousEvm;
+   assert.equal(result.isConnected, false);
+  }
+ } finally { imports['@/stores/walletTypeStore'] = previousWallet; imports['@xpla/wallet-provider'] = previousCosmos; }
+});

@@ -9,7 +9,7 @@ import { prepareAptosAction, type AptosAction } from './actions';
 export function useAptosStaking() {
   const wallet = useWallet();
   const walletType = useWalletTypeStore((state) => state.walletType);
-  const owner = walletType === 'aptos' && wallet.connected && wallet.account ? aptosAddress(wallet.account.address.toString()) : undefined;
+  const owner = walletType === 'aptos' && wallet.connected && Number(wallet.network?.chainId) === 1 && wallet.account ? aptosAddress(wallet.account.address.toString()) : undefined;
   const current = useRef(wallet); current.current = wallet;
   const cache = useQueryClient();
   const validators = useQuery({ queryKey: ['aptos', 'validators'], queryFn: readAptosValidators });

@@ -15,6 +15,7 @@ import { ConnectType } from '@xpla/wallet-provider';
 import type { Connection, Installation } from '@xpla/wallet-provider';
 import { useEvmConnection } from '@/features/wallet/useEvmConnection';
 import { NativeCosmosWalletOptions } from '@/features/native-cosmos/NativeCosmosWalletOptions';
+import { EVM_WALLET_OPTIONS } from '@/lib/wallet/evm-options';
 import { WALLET_CONNECT_PROJECT_ID } from '@/lib/wallet/constants';
 import { Check } from 'lucide-react';
 import {
@@ -33,6 +34,7 @@ import type { CosmosWalletOption, EvmWalletOption } from '@/lib/chains/types';
 
 type WalletSelectDialogProps = {
   open: boolean;
+  evmChainId?: number;
   onOpenChange: (open: boolean) => void;
 };
 
@@ -64,15 +66,15 @@ const findInstallation = (
   );
 };
 
-const WalletSelectDialog = ({ open, onOpenChange }: WalletSelectDialogProps) => {
+const WalletSelectDialog = ({ open, onOpenChange, evmChainId: requestedEvmChainId }: WalletSelectDialogProps) => {
   const { availableConnections, availableInstallations, connect } = useWalletInfo();
   const { connectors, connect: connectEvm, pending, error } = useEvmConnection();
   const setWalletType = useWalletTypeStore((state) => state.setWalletType);
   const selectedChainSlug = useChainStore((state) => state.selectedChainSlug);
   const chainConfig = CHAIN_REGISTRY[selectedChainSlug];
-  const evmChainId = chainConfig?.evmChainId;
+  const evmChainId = requestedEvmChainId ?? chainConfig?.evmChainId;
   const cosmosWalletOptions = evmChainId ? [] : chainConfig?.cosmosWalletOptions ?? [];
-  const evmWalletOptions = chainConfig?.evmWalletOptions ?? [];
+  const evmWalletOptions = requestedEvmChainId ? EVM_WALLET_OPTIONS : chainConfig?.evmWalletOptions ?? [];
   const hasCosmosWallets = cosmosWalletOptions.length > 0;
   const findEvmConnector = (option: EvmWalletOption) => {
     return connectors.find(
@@ -119,7 +121,7 @@ const WalletSelectDialog = ({ open, onOpenChange }: WalletSelectDialogProps) => 
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-2">
-          {chainConfig?.slug === 'avalanche' && <AvalancheWalletOptions onConnected={() => onOpenChange(false)} />}
+          {!requestedEvmChainId && chainConfig?.slug === 'avalanche' && <AvalancheWalletOptions onConnected={() => onOpenChange(false)} />}
           {chainConfig?.slug === 'cardano' && <CardanoWalletOptions onConnected={() => onOpenChange(false)} />}
           {chainConfig?.slug === 'vechain' && <VechainWalletOptions onConnected={() => onOpenChange(false)} />}
           {chainConfig?.slug === 'ton' && <TonWalletOptions onConnected={() => onOpenChange(false)} />}

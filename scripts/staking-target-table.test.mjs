@@ -20,6 +20,10 @@ function setup(overrides = {}) {
     react: { useState: (initial) => { const index = cursor++; state[index] ??= initial; return [state[index], (value) => { state[index] = value; }]; } },
     'react/jsx-runtime': jsx,
     '@/components/ui/button': { Button: ({ variant, size, ...props }) => React.createElement('button', { ...props, 'data-variant': variant, 'data-size': size }) },
+    '@/components/ui/card': Object.fromEntries(['Card', 'CardHeader', 'CardTitle', 'CardContent'].map((name) => [name, wrapper('div')])),
+    '@/components/ui/skeleton': { Skeleton: wrapper('div') },
+    'lucide-react': { Search: () => null },
+    './PoolStakeDialog': { PoolStakeDialog: ({ open, children }) => open ? React.createElement('section', {}, children) : null },
     '@/components/ui/input': { Input: wrapper('input') },
     '@/components/ui/table': Object.fromEntries(Object.entries({ Table: 'table', TableHeader: 'thead', TableBody: 'tbody', TableRow: 'tr', TableHead: 'th', TableCell: 'td' }).map(([key, tag]) => [key, wrapper(tag)])),
   };
@@ -31,7 +35,7 @@ function setup(overrides = {}) {
     if (Array.isArray(element)) return element.flatMap((item) => nodes(item, type));
     return [...(element.type === type ? [element] : []), ...nodes(element.props?.children, type)];
   };
-  return { html: () => renderToStaticMarkup(tree()), input: () => nodes(tree(), imports['@/components/ui/input'].Input)[0], buttons: () => nodes(tree(), imports['@/components/ui/button'].Button), selected };
+  return { html: () => renderToStaticMarkup(tree()), input: () => nodes(tree(), imports['@/components/ui/input'].Input)[0], dialog: () => nodes(tree(), imports['./PoolStakeDialog'].PoolStakeDialog)[0], props, buttons: () => nodes(tree(), imports['@/components/ui/button'].Button), selected };
 }
 
 test('empty target list has an explicit empty state', () => assert.match(setup({ targets: [] }).html(), /No validators or pools found/));
@@ -62,4 +66,28 @@ test('pending transactions disable target changes', () => {
 test('a selected target is identified without hiding other choices', () => {
   const html = setup({ value: 'pool-b' }).html();
   assert.match(html, /Selected/); assert.match(html, /Alpha/); assert.match(html, /Beta/);
+});
+
+
+test('stake form stays hidden until a row action opens it', () => {
+  const view = setup({ children: 'STAKE_FORM' });
+  assert.doesNotMatch(view.html(), /STAKE_FORM/);
+  assert.match(view.html(), /Stake/);
+  view.buttons()[0].props.onClick();
+  view.props.value = 'pool-a';
+  assert.match(view.html(), /STAKE_FORM/);
+  assert.equal(view.dialog().props.title, 'Stake with Alpha');
+  view.dialog().props.onOpenChange(false);
+  assert.doesNotMatch(view.html(), /STAKE_FORM/);
+});
+test('pending transactions keep the stake dialog open', () => {
+  const view = setup({ children: 'STAKE_FORM' });
+  view.buttons()[0].props.onClick(); view.props.value = 'pool-a';
+  view.props.pending = true;
+  view.dialog().props.onOpenChange(false);
+  assert.match(view.html(), /STAKE_FORM/);
+});
+test('validator list uses the existing card and header search layout', () => {
+  assert.match(setup().html(), /Validators \(2\)/);
+  assert.doesNotMatch(setup().html(), /max-h-96/);
 });

@@ -54,7 +54,7 @@ const MobileNav = ({ onNavigate }: { onNavigate: () => void }) => {
         <div className='border-t border-border mx-3 mt-3' />
         <div className='px-3 pt-3 pb-1 flex flex-col gap-1.5'>
           <span className='text-[11px] text-muted-foreground uppercase tracking-wider px-0.5'>Chain Staking Status</span>
-          <SidebarChainSelector />
+          <SidebarChainSelector onChainChange={onNavigate} />
         </div>
 
         {chainItems.map((item) => {

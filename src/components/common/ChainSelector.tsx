@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Select,
   SelectContent,
@@ -59,11 +60,14 @@ const TokenInfo = () => {
 };
 
 const useChainChange = () => {
+  const pathname = usePathname();
+  const router = useRouter();
   const setSelectedChainSlug = useChainStore((state) => state.setSelectedChainSlug);
   const { walletType, disconnect } = useWalletInfo();
 
   return (slug: string) => {
     const targetChain = CHAIN_REGISTRY[slug];
+    if (!targetChain) return;
 
     // Disconnect cosmos wallet if switching to a chain that doesn't support it
     if (walletType === 'cosmos' && !targetChain?.cosmosKitChainName) {
@@ -76,6 +80,9 @@ const useChainChange = () => {
     }
 
     setSelectedChainSlug(slug);
+    if (pathname.startsWith('/stake/') && pathname !== `/stake/${slug}`) {
+      router.push(`/stake/${slug}`);
+    }
   };
 };
 
@@ -102,13 +109,13 @@ const ChainSelector = () => {
   );
 };
 
-const SidebarChainSelector = () => {
+const SidebarChainSelector = ({ onChainChange }: { onChainChange?: () => void }) => {
   const selectedChainSlug = useChainStore((state) => state.selectedChainSlug);
   const handleChainChange = useChainChange();
 
   return (
-    <Select value={selectedChainSlug} onValueChange={handleChainChange}>
-      <SelectTrigger className="w-full h-8 text-xs font-semibold uppercase tracking-wider px-3">
+    <Select value={selectedChainSlug} onValueChange={(slug) => { handleChainChange(slug); onChainChange?.(); }}>
+      <SelectTrigger className="w-full h-8 text-xs font-semibold tracking-wider px-3">
         <SelectValue placeholder="Select chain" />
       </SelectTrigger>
       <SelectContent>

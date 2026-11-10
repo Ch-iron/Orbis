@@ -16,7 +16,7 @@ export function useSuiStaking() {
   const kit = useDAppKit<OrbisSuiKit>();
   const connection = useSuiWalletConnect((state) => state.connection);
   const walletType = useWalletTypeStore((state) => state.walletType);
-  const owner = walletType === 'sui' ? connection?.address ?? account?.address : undefined;
+  const owner = walletType === 'sui' ? connection?.address ?? (account?.chains.includes('sui:mainnet') ? account.address : undefined) : undefined;
   const current = useRef(owner); current.current = owner;
   const cache = useQueryClient();
   const validators = useQuery({ queryKey: ['sui', 'validators'], queryFn: readSuiValidators });

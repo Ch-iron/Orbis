@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
-import { useConnectedWallet } from '@xpla/wallet-provider';
+import { useWalletInfo } from './useWalletInfo';
 import { useQueryClient } from '@tanstack/react-query';
 import { useChain } from './useChain';
 import { useChainStore } from '@/stores/chainStore';
@@ -28,7 +28,7 @@ type TxResult = {
 };
 
 const useCosmosStakingActions = () => {
-  const connectedWallet = useConnectedWallet();
+  const { connectedWallet } = useWalletInfo();
   const { adapter } = useChain();
   const selectedChainSlug = useChainStore((state) => state.selectedChainSlug);
   const chainConfig = CHAIN_REGISTRY[selectedChainSlug];

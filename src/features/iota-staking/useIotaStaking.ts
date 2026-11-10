@@ -11,7 +11,7 @@ import type { IotaAction } from './actions';
 export function useIotaStaking() {
   const account = useCurrentAccount();
   const walletType = useWalletTypeStore((state) => state.walletType);
-  const owner = walletType === 'iota' ? account?.address : undefined;
+  const owner = walletType === 'iota' && account?.chains.includes('iota:mainnet') ? account.address : undefined;
   const current = useRef(account); current.current = account;
   const sign = useSignTransaction();
   const cache = useQueryClient();

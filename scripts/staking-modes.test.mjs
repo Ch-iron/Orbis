@@ -36,7 +36,7 @@ test('native-only and unknown chains have distinct safe routes', () => {
  assert.match(renderToStaticMarkup(route('missing').tree), /Unsupported staking chain/);
 });
 test('pool selection and user positions occupy separate tabs with disconnected and pending states', () => {
- const { PoolStakingTabs } = component('src/features/staking/PoolStakingTabs.tsx', { 'react/jsx-runtime': jsx, '@/components/ui/tabs': tabs });
+ const { PoolStakingTabs } = component('src/features/staking/PoolStakingTabs.tsx', { 'react/jsx-runtime': jsx, 'next/image': { default: wrapper('img') }, '@/components/ui/tabs': tabs });
  const tree = PoolStakingTabs({ selection: 'VALIDATORS', positions: 'POSITIONS', connected: false, pending: true });
  const contents = nodes(tree, tabs.TabsContent); assert.equal(contents[0].props.children, 'VALIDATORS'); assert.match(renderToStaticMarkup(contents[1]), /Connect your wallet/); assert.doesNotMatch(renderToStaticMarkup(contents[1]), /POSITIONS/);
  assert.ok(nodes(tree, tabs.TabsTrigger).every((node) => node.props.disabled));

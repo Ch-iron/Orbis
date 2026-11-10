@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { WalletStatus } from '@xpla/wallet-provider';
 import { Wallet, LogOut, Loader2, Copy, ArrowRightLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,23 @@ const WalletButton = () => {
   const selectedChainSlug = useChainStore((state) => state.selectedChainSlug);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [addressView, setAddressView] = useState<AddressView>('evm');
+
+  const handleDisconnect = async () => {
+    try {
+      await disconnect();
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : 'Wallet disconnection failed.');
+    }
+  };
+
+  const copyAddress = async (address: string) => {
+    try {
+      await navigator.clipboard.writeText(address);
+      toast.success('Address copied.');
+    } catch {
+      toast.error('Could not copy the address. Check clipboard permissions.');
+    }
+  };
 
   // Only show initializing state for cosmos wallet (EVM has no INITIALIZING status)
   if (walletType !== 'evm' && walletType !== 'klip' && status === WalletStatus.INITIALIZING) {
@@ -53,14 +71,14 @@ const WalletButton = () => {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem
-            onClick={() => { navigator.clipboard.writeText(walletAddress); }}
+            onClick={() => copyAddress(walletAddress)}
           >
             <Copy className="h-4 w-4 mr-2" />
             {hasDualAddress ? `Copy ${chainName} Address` : 'Copy Address'}
           </DropdownMenuItem>
           {hasDualAddress && (
             <DropdownMenuItem
-              onClick={() => { navigator.clipboard.writeText(evmAddress); }}
+              onClick={() => copyAddress(evmAddress)}
             >
               <Copy className="h-4 w-4 mr-2" />
               Copy EVM Address
@@ -78,7 +96,7 @@ const WalletButton = () => {
             </>
           )}
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => { disconnect(); }}>
+          <DropdownMenuItem onClick={handleDisconnect}>
             <LogOut className="h-4 w-4 mr-2" />
             Disconnect
           </DropdownMenuItem>

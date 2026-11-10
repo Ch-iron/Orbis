@@ -17,7 +17,7 @@ export function useHaedalStaking() {
   const kit = useDAppKit<OrbisSuiKit>();
   const connection = useSuiWalletConnect((state) => state.connection);
   const walletType = useWalletTypeStore((state) => state.walletType);
-  const owner = walletType === 'sui' ? connection?.address ?? account?.address : undefined;
+  const owner = walletType === 'sui' ? connection?.address ?? (account?.chains.includes('sui:mainnet') ? account.address : undefined) : undefined;
   const current = useRef(owner); current.current = owner;
   const cache = useQueryClient();
   const position = useQuery({ queryKey: ['sui', 'haedal', owner], queryFn: () => readHaedalPosition(owner!), enabled: !!owner });

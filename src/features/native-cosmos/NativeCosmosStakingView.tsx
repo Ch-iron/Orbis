@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { StakingTargetTable } from '@/features/staking/StakingTargetTable';
 import { PoolStakingTabs } from '@/features/staking/PoolStakingTabs';
 import type { ChainConfig } from '@/lib/chains/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,7 +18,6 @@ export function NativeCosmosStakingView({ config }: { config: ChainConfig }) {
   const [validator, setValidator] = useState('');
   const [destination, setDestination] = useState('');
   const [amount, setAmount] = useState('');
-  const [search, setSearch] = useState('');
   const { decimals, symbol } = config.stakingToken;
   const validators = staking.validators.data ?? [];
   const active = validators.filter((item) => item.status === 'active');
@@ -55,15 +55,21 @@ export function NativeCosmosStakingView({ config }: { config: ChainConfig }) {
     </CardContent></Card>);
 
   return <div className="flex flex-col gap-6">
-    <h1 className="text-2xl font-bold">{config.name} Staking</h1>
+    <h1 className="text-2xl font-bold">Staking</h1>
     {!staking.connected && <Button className="self-start" onClick={() => setWalletOpen(true)}>Connect wallet</Button>}
     <WalletSelectDialog open={walletOpen} onOpenChange={setWalletOpen} />
     {(queryError || staking.error) && <p role="alert" className="break-words text-sm text-destructive">{staking.error ?? queryError?.message}</p>}
-    <PoolStakingTabs connected={staking.connected} pending={staking.pending} selection={<><Card><CardHeader><CardTitle>Validators</CardTitle></CardHeader><CardContent className="flex flex-col gap-3">
-      <Input aria-label="Search validators" placeholder="Search validators" value={search} onChange={(event) => setSearch(event.target.value)} />
-      {staking.validators.isLoading && <p>Loading validators…</p>}
-      {active.filter((item) => `${item.name} ${item.address}`.toLowerCase().includes(search.toLowerCase())).map((item) => <div key={item.address} className="flex items-center justify-between gap-3 border-b py-2"><div className="min-w-0"><p>{item.name}</p><p className="break-all text-xs text-muted-foreground">{item.address}</p><p className="text-sm">Commission: {formatPercentage(item.commission)}</p></div><Button variant="outline" disabled={staking.pending} onClick={() => { setOperation('delegate'); setValidator(item.address); }}>Select</Button></div>)}
-    </CardContent></Card>{management}</>} positions={<>{management}<Card><CardHeader><CardTitle>Staking rewards</CardTitle></CardHeader><CardContent className="flex flex-col gap-3">
+    <PoolStakingTabs connected={staking.connected} pending={staking.pending} selection={<StakingTargetTable
+      targets={active.map((item) => ({ id: item.address, name: item.name, details: <>Commission {formatPercentage(item.commission)}</> }))}
+      value={validator} onSelect={(address) => { setOperation('delegate'); setValidator(address); setAmount(''); }} loading={staking.validators.isLoading} error={staking.validators.error} pending={staking.pending}>
+      <p>Available: {staking.balance.data === undefined ? '-' : formatTokenAmount(staking.balance.data, decimals)} {symbol}</p>
+      <label className="flex flex-col gap-2 text-sm">Amount ({symbol})<Input value={amount} inputMode="decimal" onChange={(event) => setAmount(event.target.value)} placeholder="0.00" /></label>
+      {staking.duration.data !== undefined && <p className="text-sm text-muted-foreground">Unbonding period: {(staking.duration.data / 86400).toFixed(2)} days.</p>}
+      <Button disabled={!staking.connected || staking.pending || !selectedValidator || !amount} onClick={() => void staking.execute({ type: 'delegate', validator: selectedValidator, amount })}>Stake</Button>
+      {staking.pending && <p role="status">Waiting for wallet approval and confirmation.</p>}
+      {staking.error && <p role="alert" className="text-destructive">{staking.error}</p>}
+      {staking.hash && <a className="break-all underline" href={`${config.explorer}/tx/${staking.hash}`} target="_blank" rel="noreferrer">View transaction</a>}
+    </StakingTargetTable>} positions={<>{management}<Card><CardHeader><CardTitle>Staking rewards</CardTitle></CardHeader><CardContent className="flex flex-col gap-3">
       {staking.rewards.isLoading ? <p>Loading rewards…</p> : rewards.length ? rewards.map((coin) => <p key={coin.denom}>{formatTokenAmount(coin.amount, coin.decimals)} {coin.symbol}</p>) : <p className="text-muted-foreground">{staking.connected && staking.rewards.data ? 'No claimable rewards.' : 'Connect a wallet to view rewards.'}</p>}
       <Button className="self-start" disabled={!claimable || staking.pending || !staking.connected} onClick={() => void staking.execute({ type: 'claim', validators: staking.rewards.data?.perValidator.map((item) => item.validatorAddress) ?? [] })}>Claim rewards</Button>
       {config.slug === 'dydx' && <p className="text-sm text-muted-foreground">USDC and DYDX rewards are separate assets. Claiming USDC does not stake it as DYDX.</p>}

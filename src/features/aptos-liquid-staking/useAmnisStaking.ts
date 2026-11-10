@@ -11,7 +11,7 @@ import { readAmnisPosition } from './client';
 export function useAmnisStaking() {
   const wallet = useWallet();
   const walletType = useWalletTypeStore((state) => state.walletType);
-  const owner = walletType === 'aptos' && wallet.connected && wallet.account ? aptosAddress(wallet.account.address.toString()) : undefined;
+  const owner = walletType === 'aptos' && wallet.connected && Number(wallet.network?.chainId) === 1 && wallet.account ? aptosAddress(wallet.account.address.toString()) : undefined;
   const current = useRef(wallet); current.current = wallet;
   const cache = useQueryClient();
   const position = useQuery({ queryKey: ['aptos', 'amnis', owner], queryFn: () => readAmnisPosition(owner!), enabled: !!owner });

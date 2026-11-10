@@ -11,8 +11,8 @@ function load(path,imports) {
  vm.runInNewContext(ts.transpileModule(fs.readFileSync(path,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText,context);return context.exports;
 }
 const options=load('src/lib/wallet/evm-options.ts',{}).EVM_WALLET_OPTIONS;
-function render(slug,projectId='project',pending=false){
- const config={evmChainId:1,evmWalletOptions:options,cosmosWalletOptions:[{label:'Old native option'}]};
+function render(slug,projectId='project',pending=false,evmChainId){
+ const config={slug,evmChainId:slug === 'avalanche' ? undefined : 1,evmWalletOptions:slug === 'avalanche' ? [] : options,cosmosWalletOptions:[{label:'Old native option'}]};
  const wrapper=({children})=>React.createElement('div',null,children);
  const imports={
   'next/image': ({ unoptimized, ...props }) => React.createElement('img', props),
@@ -29,6 +29,7 @@ function render(slug,projectId='project',pending=false){
   '@/features/iota-staking/IotaWalletOptions': {IotaWalletOptions:()=>null},
   '@/features/algorand-staking/AlgorandWalletOptions': {AlgorandWalletOptions:()=>null},
   '@/features/native-cosmos/NativeCosmosWalletOptions':{NativeCosmosWalletOptions:()=>null},
+  '@/lib/wallet/evm-options':{EVM_WALLET_OPTIONS:options},
   '@/lib/wallet/constants':{WALLET_CONNECT_PROJECT_ID:projectId},
   'lucide-react':{Check:()=>null},
   '@/components/ui/dialog':{Dialog:wrapper,DialogContent:wrapper,DialogHeader:wrapper,DialogTitle:wrapper,DialogDescription:wrapper},
@@ -39,7 +40,7 @@ function render(slug,projectId='project',pending=false){
   '@/lib/utils/wallet-detection':{isWalletInstalled:()=>false},
  };
  const {WalletSelectDialog}=load('src/components/layout/WalletSelectDialog.tsx',imports);
- return renderToStaticMarkup(React.createElement(WalletSelectDialog,{open:true,onOpenChange:()=>{}}));
+ return renderToStaticMarkup(React.createElement(WalletSelectDialog,{open:true,onOpenChange:()=>{},evmChainId}));
 }
 test('EVM chains show only MetaMask and WalletConnect, including XPLA and Sei',()=>{
  for(const slug of ['kaia','sei','xpla','ethereum']){
@@ -50,4 +51,8 @@ test('missing project ID disables WalletConnect and pending connection disables 
  assert.equal((render('kaia',undefined).match(/disabled=""/g)||[]).length,0);
  assert.equal((render('kaia','').match(/disabled=""/g)||[]).length,1);
  assert.equal((render('kaia','project',true).match(/disabled=""/g)||[]).length,2);
+});
+
+test('Avalanche C-Chain requests use the common EVM wallet choices',()=>{
+ const html=render('avalanche','project',false,43114); assert.match(html,/MetaMask/); assert.match(html,/WalletConnect/);
 });

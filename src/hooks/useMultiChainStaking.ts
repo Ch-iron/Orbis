@@ -77,18 +77,19 @@ const useMultiChainStaking = (): {
   const multiversxAddress = useMultiversxWallet((state) => state.address);
   const nearAddress = useNearWallet((state) => state.address);
   const aptosWallet = useAptosWallet();
-  const aptosAddress = aptosWallet.connected ? aptosWallet.account?.address.toString() : undefined;
+  const aptosAddress = aptosWallet.connected && Number(aptosWallet.network?.chainId) === 1 ? aptosWallet.account?.address.toString() : undefined;
   const suiAccount = useSuiAccount();
   const suiWalletConnect = useSuiWalletConnect((state) => state.connection);
-  const suiAddress = suiWalletConnect?.address ?? suiAccount?.address;
-  const iotaAddress = useIotaAccount()?.address;
+  const suiAddress = suiWalletConnect?.address ?? (suiAccount?.chains.includes('sui:mainnet') ? suiAccount.address : null);
+  const iotaAccount = useIotaAccount();
+  const iotaAddress = iotaAccount?.chains.includes('iota:mainnet') ? iotaAccount.address : null;
   const { activeAddress: algoAddress } = useAlgoWallet();
   const celestiaWallet = useCosmosKitChain('celestia', false);
   const dydxWallet = useCosmosKitChain('dydx', false);
   const celestiaAddress = celestiaWallet.isWalletConnected ? celestiaWallet.address : null;
   const dydxAddress = dydxWallet.isWalletConnected ? dydxWallet.address : null;
 
-  const isCosmosConnected = status === WalletStatus.WALLET_CONNECTED;
+  const isCosmosConnected = walletType === 'cosmos' && status === WalletStatus.WALLET_CONNECTED;
   const isConnected = (walletType === 'avalanche' && !!avalanche) || (walletType === 'vechain' && !!vechainAddress) || (walletType === 'cardano' && !!cardano) || (walletType === 'ton' && !!tonAddress) || (walletType === 'multiversx' && !!multiversxAddress) || (walletType === 'near' && !!nearAddress) || (walletType === 'aptos' && !!aptosAddress) || (walletType === 'sui' && !!suiAddress) || (walletType === 'iota' && !!iotaAddress) || (walletType === 'algorand' && !!algoAddress) || (walletType === 'evm' && isEvmConnected) || (walletType === 'klip' && !!klipAddress) || (walletType === 'native-cosmos' && !!(celestiaAddress || dydxAddress)) || isCosmosConnected;
 
   // Address resolution query for chains that need it (e.g. SEI)
