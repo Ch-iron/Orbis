@@ -90,9 +90,10 @@ const XPLA_CONFIG: ChainConfig = {
     },
   },
   cosmosWalletOptions: [
-    { label: 'WalletConnect', type: 'WALLETCONNECT', identifier: undefined },
     { label: 'XPLA Games Wallet', type: 'EXTENSION', identifier: 'c2xvault' },
     { label: 'XPLA Vault Wallet', type: 'EXTENSION', identifier: 'xplavault' },
+    // Distinct label: the EVM WalletConnect option is shown in the same dialog
+    { label: 'XPLA WalletConnect', type: 'WALLETCONNECT', identifier: undefined },
   ],
   evmWalletOptions: EVM_WALLET_OPTIONS,
   createAdapter,

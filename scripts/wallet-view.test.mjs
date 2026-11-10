@@ -11,12 +11,13 @@ function load(path,imports) {
  vm.runInNewContext(ts.transpileModule(fs.readFileSync(path,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText,context);return context.exports;
 }
 const options=load('src/lib/wallet/evm-options.ts',{}).EVM_WALLET_OPTIONS;
-function render(slug,projectId='project',pending=false,evmChainId){
- const config={slug,evmChainId:slug === 'avalanche' ? undefined : 1,evmWalletOptions:slug === 'avalanche' ? [] : options,cosmosWalletOptions:[{label:'Old native option'}]};
+function render(slug,projectId='project',pending=false,evmChainId,cosmosWalletOptions=[]){
+ const config={slug,evmChainId:slug === 'avalanche' ? undefined : 1,evmWalletOptions:slug === 'avalanche' ? [] : options,cosmosWalletOptions};
  const wrapper=({children})=>React.createElement('div',null,children);
  const imports={
   'next/image': ({ unoptimized, ...props }) => React.createElement('img', props),
   react:React,'react/jsx-runtime':jsxRuntime,'@xpla/wallet-provider':{ConnectType:{}},lucide:{},
+  '@/features/wallet/evm-wallet-availability':{isMissingInjectedWallet:()=>false},
   '@/features/wallet/useEvmConnection':{useEvmConnection:()=>({connectors:[],pending,error:null})},
   '@/features/avalanche-staking/AvalancheWalletOptions': {AvalancheWalletOptions:()=>null},
   '@/features/cardano-staking/CardanoWalletOptions': {CardanoWalletOptions:()=>null},
@@ -42,10 +43,21 @@ function render(slug,projectId='project',pending=false,evmChainId){
  const {WalletSelectDialog}=load('src/components/layout/WalletSelectDialog.tsx',imports);
  return renderToStaticMarkup(React.createElement(WalletSelectDialog,{open:true,onOpenChange:()=>{},evmChainId}));
 }
-test('EVM chains show only MetaMask and WalletConnect, including XPLA and Sei',()=>{
- for(const slug of ['kaia','sei','xpla','ethereum']){
-  const html=render(slug);assert.equal((html.match(/<button/g)||[]).length,2);assert.match(html,/MetaMask/);assert.match(html,/WalletConnect/);assert.doesNotMatch(html,/Klip|Old native option/);
+test('EVM chains without native wallet options show the EVM wallet list',()=>{
+ for(const slug of ['kaia','sei','ethereum']){
+  const html=render(slug);assert.equal((html.match(/<button/g)||[]).length,2);assert.match(html,/MetaMask/);assert.match(html,/WalletConnect/);assert.doesNotMatch(html,/Klip/);
  }
+});
+const xplaNative=[{label:'XPLA Games Wallet',type:'EXTENSION',identifier:'c2xvault'},{label:'XPLA Vault Wallet',type:'EXTENSION',identifier:'xplavault'}];
+test('XPLA shows its native wallets alongside the EVM wallets',()=>{
+ const html=render('xpla','project',false,undefined,xplaNative);
+ assert.equal((html.match(/<button/g)||[]).length,4);
+ assert.match(html,/XPLA Games Wallet/);assert.match(html,/XPLA Vault Wallet/);assert.match(html,/MetaMask/);
+ assert.ok(html.indexOf('XPLA Games Wallet')<html.indexOf('MetaMask'));
+});
+test('a requested EVM network hides the selected chain native wallets',()=>{
+ const html=render('xpla','project',false,43114,xplaNative);
+ assert.doesNotMatch(html,/XPLA Games Wallet|XPLA Vault Wallet/);assert.match(html,/MetaMask/);
 });
 test('missing project ID disables WalletConnect and pending connection disables both',()=>{
  assert.equal((render('kaia',undefined).match(/disabled=""/g)||[]).length,0);

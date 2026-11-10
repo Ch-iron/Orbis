@@ -73,7 +73,8 @@ const WalletSelectDialog = ({ open, onOpenChange, evmChainId: requestedEvmChainI
   const selectedChainSlug = useChainStore((state) => state.selectedChainSlug);
   const chainConfig = CHAIN_REGISTRY[selectedChainSlug];
   const evmChainId = requestedEvmChainId ?? chainConfig?.evmChainId;
-  const cosmosWalletOptions = evmChainId ? [] : chainConfig?.cosmosWalletOptions ?? [];
+  // Native wallets belong to the selected chain; hide them only when another EVM network is requested
+  const cosmosWalletOptions = requestedEvmChainId ? [] : chainConfig?.cosmosWalletOptions ?? [];
   const evmWalletOptions = requestedEvmChainId ? EVM_WALLET_OPTIONS : chainConfig?.evmWalletOptions ?? [];
   const hasCosmosWallets = cosmosWalletOptions.length > 0;
   const findEvmConnector = (option: EvmWalletOption) => {
