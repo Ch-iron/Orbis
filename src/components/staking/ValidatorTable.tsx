@@ -41,7 +41,7 @@ const STATUS_VARIANT_MAP: Record<
 const ValidatorTable = () => {
   const { config } = useChain();
   const { apy: networkRate } = useStakingApy(config.slug === 'sei');
-  const { data: validators, isLoading } = useValidators();
+  const { data: validators, isLoading, error } = useValidators();
   const { data: delegations } = useDelegations();
   const delegatedAddresses = useMemo(() => {
     if (!delegations) {
@@ -94,7 +94,7 @@ const ValidatorTable = () => {
     const filtered = validators.filter(
       (validator) =>
         validator.status === 'active' &&
-        validator.name.toLowerCase().includes(search.toLowerCase()) &&
+        (validator.name.toLowerCase().includes(search.trim().toLowerCase()) || validator.address.toLowerCase().includes(search.trim().toLowerCase())) &&
         (!delegatableOnly || validator.delegatable !== false),
     );
 
@@ -105,11 +105,9 @@ const ValidatorTable = () => {
         return (validatorA.commission - validatorB.commission) * multiplier;
       }
       if (sortField === 'votingPower') {
-        return (
-          (BigInt(validatorA.votingPower) > BigInt(validatorB.votingPower)
-            ? 1
-            : -1) * multiplier
-        );
+        const a = BigInt(validatorA.votingPower);
+        const b = BigInt(validatorB.votingPower);
+        return (a === b ? 0 : a > b ? 1 : -1) * multiplier;
       }
       if (sortField === 'apy') {
         return compareValidatorYields(
@@ -144,12 +142,16 @@ const ValidatorTable = () => {
     );
   }
 
+  if (error) return <Card><CardHeader><CardTitle>Validators</CardTitle></CardHeader><CardContent>
+    <p role="alert" className="text-sm text-destructive">Validator data unavailable: {error.message}</p>
+  </CardContent></Card>;
+
   return (
     <>
       <Card>
         <CardHeader className='flex flex-row items-center justify-between gap-4 flex-wrap'>
           <CardTitle>Validators ({filteredAndSorted.length})</CardTitle>
-          <div className='flex items-center gap-2'>
+          <div className='flex flex-wrap items-center gap-2 min-w-0'>
             {hasDelegatable && (
               <div className='flex items-center gap-2'>
                 <Switch
@@ -162,10 +164,11 @@ const ValidatorTable = () => {
                 </Label>
               </div>
             )}
-            <div className='relative w-64'>
+            <div className='relative w-full sm:w-64'>
               <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
               <Input
-                placeholder='Search validators...'
+                aria-label='Search validators by name or address'
+                placeholder='Search name or address...'
                 value={search}
                 onChange={(event) => {
                   setSearch(event.target.value);

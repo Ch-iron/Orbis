@@ -8,7 +8,7 @@ import { useChainStore } from '@/stores/chainStore';
 import { getNavItems } from '@/lib/navigation';
 import { SidebarChainSelector } from '@/components/common/ChainSelector';
 
-const MobileNav = () => {
+const MobileNav = ({ onNavigate }: { onNavigate: () => void }) => {
   const pathname = usePathname();
   const selectedChainSlug = useChainStore((state) => state.selectedChainSlug);
   const navItems = getNavItems(selectedChainSlug);
@@ -35,6 +35,8 @@ const MobileNav = () => {
             <Link
               key={item.label}
               href={item.href}
+              onClick={onNavigate}
+              aria-current={isActive ? 'page' : undefined}
               className={cn(
                 'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
                 isActive
@@ -63,6 +65,8 @@ const MobileNav = () => {
             <Link
               key={item.label}
               href={item.href}
+              onClick={onNavigate}
+              aria-current={isActive ? 'page' : undefined}
               className={cn(
                 'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
                 isActive

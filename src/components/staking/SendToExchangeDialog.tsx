@@ -48,6 +48,9 @@ const SendToExchangeDialog = ({
   const [newName, setNewName] = useState('');
   const [newAddress, setNewAddress] = useState('');
   const { decimals, symbol } = config.stakingToken;
+  const rawAmount = parseTokenAmount(amount, decimals);
+  const amountError = amount && (rawAmount === null || BigInt(rawAmount) <= BigInt(0))
+    ? `Enter a positive amount with up to ${decimals} decimal places.` : null;
 
   const availableFormatted = formatTokenAmount(balance ?? '0', decimals, 6);
   const selectedExchange = addresses.find(
@@ -55,12 +58,11 @@ const SendToExchangeDialog = ({
   );
 
   const handleSend = async () => {
-    if (!amount || Number(amount) <= 0 || !selectedExchange) {
+    if (loading || !isReady || !rawAmount || BigInt(rawAmount) <= BigInt(0) || !selectedExchange) {
       return;
     }
 
     setLoading(true);
-    const rawAmount = parseTokenAmount(amount, decimals);
     const result = await send({
       toAddress: selectedExchange.address,
       amount: rawAmount,
@@ -201,7 +203,11 @@ const SendToExchangeDialog = ({
             <Label>Amount ({symbol})</Label>
             <div className="flex gap-2">
               <Input
-                type="number"
+                type="text"
+                inputMode="decimal"
+                disabled={loading}
+                aria-label={`Amount (${symbol})`}
+                aria-invalid={!!amountError}
                 placeholder="0.00"
                 value={amount}
                 onChange={(event) => {
@@ -219,6 +225,7 @@ const SendToExchangeDialog = ({
             </p>
           </div>
         </div>
+        {amountError && <p role="alert" className="text-sm text-destructive">{amountError}</p>}
         <DialogFooter>
           <Button
             variant="outline"
@@ -233,8 +240,8 @@ const SendToExchangeDialog = ({
             disabled={
               !isReady ||
               loading ||
-              !amount ||
-              Number(amount) <= 0 ||
+              !rawAmount ||
+              BigInt(rawAmount) <= BigInt(0) ||
               !selectedExchange
             }
           >

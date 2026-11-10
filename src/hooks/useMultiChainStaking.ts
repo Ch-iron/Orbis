@@ -33,12 +33,16 @@ type ChainStakingData = {
   address: string | null;
   delegations: Delegation[] | undefined;
   delegationsLoading: boolean;
+  delegationsError: Error | null;
   rewards: RewardInfo | undefined;
   rewardsLoading: boolean;
+  rewardsError: Error | null;
   unbonding: UnbondingEntry[] | undefined;
   unbondingLoading: boolean;
+  unbondingError: Error | null;
   balance: string | undefined;
   balanceLoading: boolean;
+  balanceError: Error | null;
   apy: number | null;
   apyLoading: boolean;
 };
@@ -209,12 +213,16 @@ const useMultiChainStaking = (): {
     address: chainAddresses[index] ?? null,
     delegations: delegationResults[index]?.data,
     delegationsLoading: delegationResults[index]?.isLoading ?? false,
+    delegationsError: delegationResults[index]?.error ?? null,
     rewards: rewardResults[index]?.data,
     rewardsLoading: rewardResults[index]?.isLoading ?? false,
+    rewardsError: rewardResults[index]?.error ?? null,
     unbonding: unbondingResults[index]?.data,
     unbondingLoading: unbondingResults[index]?.isLoading ?? false,
+    unbondingError: unbondingResults[index]?.error ?? null,
     balance: balanceResults[index]?.data,
     balanceLoading: balanceResults[index]?.isLoading ?? false,
+    balanceError: balanceResults[index]?.error ?? null,
     apy: apyResults[index]?.data ?? null,
     apyLoading: apyResults[index]?.isLoading ?? false,
   }));

@@ -44,13 +44,11 @@ const formatPercentage = (
 const parseTokenAmount = (
   humanAmount: string,
   decimals: number,
-): string => {
-  const parts = humanAmount.split('.');
-  const integerPart = parts[0] ?? '0';
-  const decimalPart = (parts[1] ?? '').padEnd(decimals, '0').slice(0, decimals);
-  const result =
-    `${integerPart}${decimalPart}`.replace(/^0+/, '');
-  return result ?? '0';
+): string | null => {
+  if (!/^\d+(\.\d+)?$/.test(humanAmount)) return null;
+  const [integerPart, fraction = ''] = humanAmount.split('.');
+  if (fraction.length > decimals) return null;
+  return `${integerPart}${fraction.padEnd(decimals, '0')}`.replace(/^0+/, '') || '0';
 };
 
 // Truncate address for display (e.g. "xpla1abc...xyz123")

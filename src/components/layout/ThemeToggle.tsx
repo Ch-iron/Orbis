@@ -15,7 +15,7 @@ const ThemeToggle = () => {
 
   if (!mounted) {
     return (
-      <Button variant="ghost" size="icon" disabled>
+      <Button variant="ghost" size="icon" disabled aria-label="Toggle color theme">
         <Sun className="h-4 w-4" />
       </Button>
     );
@@ -25,6 +25,7 @@ const ThemeToggle = () => {
     <Button
       variant="ghost"
       size="icon"
+      aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
       onClick={() => { setTheme(theme === 'dark' ? 'light' : 'dark'); }}
     >
       {theme === 'dark' ? (

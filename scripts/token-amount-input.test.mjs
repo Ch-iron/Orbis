@@ -1,0 +1,10 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+import ts from 'typescript';
+const c={exports:{}};vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/lib/utils/format.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,c);
+const {parseTokenAmount}=c.exports;
+test('zero amounts have a canonical raw representation',()=>{for(const s of ['0','0.0','00.000000'])assert.equal(parseTokenAmount(s,6),'0');});
+test('invalid and excess-precision inputs cannot become transaction amounts',()=>{for(const s of ['','1e3','-1','Infinity','1.2.3',' 1','0.0000001'])assert.equal(parseTokenAmount(s,6),null);});
+test('minimum units and large amounts retain all digits without rounding',()=>{assert.equal(parseTokenAmount('0.000001',6),'1');assert.equal(parseTokenAmount('12345678901234567890.123456789012345678',18),'12345678901234567890123456789012345678');assert.equal(parseTokenAmount('12',0),'12');});

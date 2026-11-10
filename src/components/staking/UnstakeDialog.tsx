@@ -24,16 +24,18 @@ const UnstakeDialog = ({ open, onOpenChange, delegation }: UnstakeDialogProps) =
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const { decimals, symbol } = config.stakingToken;
+  const rawAmount = parseTokenAmount(amount, decimals);
+  const amountError = amount && (rawAmount === null || (BigInt(rawAmount) <= BigInt(0) || BigInt(rawAmount) > BigInt(delegation.amount)))
+    ? `Enter an amount within your staked balance with up to ${decimals} decimal places.` : null;
 
   const stakedFormatted = formatTokenAmount(delegation.amount, decimals, 6);
 
   const handleUndelegate = async () => {
-    if (!amount || Number(amount) <= 0) {
+    if (loading || !isReady || !rawAmount || (BigInt(rawAmount) <= BigInt(0) || BigInt(rawAmount) > BigInt(delegation.amount))) {
       return;
     }
 
     setLoading(true);
-    const rawAmount = parseTokenAmount(amount, decimals);
     const result = await undelegate({ validatorAddress: delegation.validatorAddress, amount: rawAmount }).catch((error) => {
       console.error('undelegate error', error);
       return { success: false as const, txHash: null, error: 'Transaction failed' };
@@ -48,7 +50,7 @@ const UnstakeDialog = ({ open, onOpenChange, delegation }: UnstakeDialogProps) =
   };
 
   const handleMax = () => {
-    setAmount(stakedFormatted.replace(/,/g, ''));
+    setAmount(formatTokenAmount(delegation.amount, decimals, decimals).replace(/,/g, ''));
   };
 
   return (
@@ -67,7 +69,11 @@ const UnstakeDialog = ({ open, onOpenChange, delegation }: UnstakeDialogProps) =
             <Label>Amount ({symbol})</Label>
             <div className="flex gap-2">
               <Input
-                type="number"
+                type="text"
+                inputMode="decimal"
+                disabled={loading}
+                aria-label={`Amount (${symbol})`}
+                aria-invalid={!!amountError}
                 placeholder="0.00"
                 value={amount}
                 onChange={(event) => { setAmount(event.target.value); }}
@@ -83,6 +89,7 @@ const UnstakeDialog = ({ open, onOpenChange, delegation }: UnstakeDialogProps) =
             </p>
           </div>
         </div>
+        {amountError && <p role="alert" className="text-sm text-destructive">{amountError}</p>}
         <DialogFooter>
           <Button variant="outline" onClick={() => { onOpenChange(false); }}>
             Cancel
@@ -90,7 +97,7 @@ const UnstakeDialog = ({ open, onOpenChange, delegation }: UnstakeDialogProps) =
           <Button
             variant="destructive"
             onClick={handleUndelegate}
-            disabled={!isReady || loading || !amount || Number(amount) <= 0}
+            disabled={!isReady || loading || !rawAmount || (BigInt(rawAmount) <= BigInt(0) || BigInt(rawAmount) > BigInt(delegation.amount))}
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
             Unstake

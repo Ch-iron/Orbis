@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useChain } from './useChain';
 import { useWalletInfo } from './useWalletInfo';
 import { useChainStore } from '@/stores/chainStore';
@@ -79,7 +79,10 @@ const useTxHistory = (page: number = 1) => {
     queryFn: () => adapter.getTransactionHistory(walletAddress!, 20, page),
     enabled: !!walletAddress && !config.txHistoryExternalUrl,
     staleTime: 60_000,
-    placeholderData: keepPreviousData,
+    placeholderData: (previousData, previousQuery) => {
+      const key = previousQuery?.queryKey;
+      return key?.[1] === selectedChainSlug && key?.[2] === walletAddress ? previousData : undefined;
+    },
   });
 };
 

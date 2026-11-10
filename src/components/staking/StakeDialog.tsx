@@ -26,16 +26,18 @@ const StakeDialog = ({ open, onOpenChange, validator }: StakeDialogProps) => {
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const { decimals, symbol } = config.stakingToken;
+  const rawAmount = parseTokenAmount(amount, decimals);
+  const amountError = amount && (rawAmount === null || BigInt(rawAmount) <= BigInt(0))
+    ? `Enter a positive amount with up to ${decimals} decimal places.` : null;
 
   const availableFormatted = formatTokenAmount(balance ?? '0', decimals, 6);
 
   const handleDelegate = async () => {
-    if (!amount || Number(amount) <= 0) {
+    if (loading || !isReady || !rawAmount || BigInt(rawAmount) <= BigInt(0)) {
       return;
     }
 
     setLoading(true);
-    const rawAmount = parseTokenAmount(amount, decimals);
     const result = await delegate({ validatorAddress: validator.address, amount: rawAmount }).catch((error) => {
       console.error('delegate error', error);
       return { success: false as const, txHash: null, error: 'Transaction failed' };
@@ -67,7 +69,11 @@ const StakeDialog = ({ open, onOpenChange, validator }: StakeDialogProps) => {
             <Label>Amount ({symbol})</Label>
             <div className="flex gap-2">
               <Input
-                type="number"
+                type="text"
+                inputMode="decimal"
+                disabled={loading}
+                aria-label={`Amount (${symbol})`}
+                aria-invalid={!!amountError}
                 placeholder="0.00"
                 value={amount}
                 onChange={(event) => { setAmount(event.target.value); }}
@@ -83,13 +89,14 @@ const StakeDialog = ({ open, onOpenChange, validator }: StakeDialogProps) => {
             </p>
           </div>
         </div>
+        {amountError && <p role="alert" className="text-sm text-destructive">{amountError}</p>}
         <DialogFooter>
           <Button variant="outline" onClick={() => { onOpenChange(false); }}>
             Cancel
           </Button>
           <Button
             onClick={handleDelegate}
-            disabled={!isReady || loading || !amount || Number(amount) <= 0}
+            disabled={!isReady || loading || !rawAmount || BigInt(rawAmount) <= BigInt(0)}
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
             Delegate

@@ -1,5 +1,6 @@
 'use client';
 
+import { waitForSuccessfulReceipt } from '@/lib/wallet/receipt';
 import { useRef, useState } from 'react';
 import { useAccount, useWalletClient } from 'wagmi';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -44,12 +45,7 @@ export function useEvmLiquidStaking<Action, Position>(protocol: EvmLiquidProtoco
         checkAccount,
         simulate: (transaction) => protocol.client.estimateGas({ ...transaction, account: address }),
         send: (transaction) => wallet.sendTransaction({ ...transaction, account: address, chain: protocol.chain }),
-        wait: async (submittedHash) => {
-          let replaced = false;
-          const receipt = await protocol.client.waitForTransactionReceipt({ hash: submittedHash, onReplaced: ({ reason }) => { if (reason !== 'repriced') replaced = true; } });
-          if (replaced) throw new Error('The transaction was cancelled or replaced. Check the explorer.');
-          return receipt;
-        },
+        wait: (submittedHash) => waitForSuccessfulReceipt(protocol.client, submittedHash),
         onSubmitted: (submittedHash) => { setHash(submittedHash); setConfirmed(false); },
         onConfirmed: () => setConfirmed(true),
       });

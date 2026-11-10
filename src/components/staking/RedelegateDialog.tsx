@@ -28,6 +28,9 @@ const RedelegateDialog = ({ open, onOpenChange, delegation }: RedelegateDialogPr
   const [targetValidator, setTargetValidator] = useState('');
   const [loading, setLoading] = useState(false);
   const { decimals, symbol } = config.stakingToken;
+  const rawAmount = parseTokenAmount(amount, decimals);
+  const amountError = amount && (rawAmount === null || (BigInt(rawAmount) <= BigInt(0) || BigInt(rawAmount) > BigInt(delegation.amount)))
+    ? `Enter an amount within your staked balance with up to ${decimals} decimal places.` : null;
 
   const stakedFormatted = formatTokenAmount(delegation.amount, decimals, 6);
 
@@ -37,12 +40,11 @@ const RedelegateDialog = ({ open, onOpenChange, delegation }: RedelegateDialogPr
   );
 
   const handleRedelegate = async () => {
-    if (!amount || Number(amount) <= 0 || !targetValidator) {
+    if (loading || !isReady || !rawAmount || (BigInt(rawAmount) <= BigInt(0) || BigInt(rawAmount) > BigInt(delegation.amount)) || !targetValidator) {
       return;
     }
 
     setLoading(true);
-    const rawAmount = parseTokenAmount(amount, decimals);
     const result = await redelegate({
       srcValidatorAddress: delegation.validatorAddress,
       dstValidatorAddress: targetValidator,
@@ -62,7 +64,7 @@ const RedelegateDialog = ({ open, onOpenChange, delegation }: RedelegateDialogPr
   };
 
   const handleMax = () => {
-    setAmount(stakedFormatted.replace(/,/g, ''));
+    setAmount(formatTokenAmount(delegation.amount, decimals, decimals).replace(/,/g, ''));
   };
 
   return (
@@ -94,7 +96,11 @@ const RedelegateDialog = ({ open, onOpenChange, delegation }: RedelegateDialogPr
             <Label>Amount ({symbol})</Label>
             <div className="flex gap-2">
               <Input
-                type="number"
+                type="text"
+                inputMode="decimal"
+                disabled={loading}
+                aria-label={`Amount (${symbol})`}
+                aria-invalid={!!amountError}
                 placeholder="0.00"
                 value={amount}
                 onChange={(event) => { setAmount(event.target.value); }}
@@ -110,13 +116,14 @@ const RedelegateDialog = ({ open, onOpenChange, delegation }: RedelegateDialogPr
             </p>
           </div>
         </div>
+        {amountError && <p role="alert" className="text-sm text-destructive">{amountError}</p>}
         <DialogFooter>
           <Button variant="outline" onClick={() => { onOpenChange(false); }}>
             Cancel
           </Button>
           <Button
             onClick={handleRedelegate}
-            disabled={!isReady || loading || !amount || Number(amount) <= 0 || !targetValidator}
+            disabled={!isReady || loading || !rawAmount || (BigInt(rawAmount) <= BigInt(0) || BigInt(rawAmount) > BigInt(delegation.amount)) || !targetValidator}
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
             Redelegate

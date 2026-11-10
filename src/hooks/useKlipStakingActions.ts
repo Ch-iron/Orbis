@@ -1,5 +1,6 @@
 'use client';
 
+import { waitForSuccessfulReceipt } from '@/lib/wallet/receipt';
 import { useCallback } from 'react';
 import { createPublicClient, http, encodeFunctionData } from 'viem';
 import { useQueryClient } from '@tanstack/react-query';
@@ -48,15 +49,13 @@ const useKlipStakingActions = () => {
 
   const waitForTx = useCallback(
     async (txHash: string): Promise<void> => {
-      if (!evmRpc) {
-        return;
-      }
+      if (!evmRpc) throw new Error('Transaction confirmation is unavailable. Check the explorer before retrying.');
 
       const client = createPublicClient({
         transport: http(evmRpc),
       });
 
-      await client.waitForTransactionReceipt({ hash: txHash as `0x${string}` });
+      await waitForSuccessfulReceipt(client, txHash as `0x${string}`);
     },
     [evmRpc],
   );

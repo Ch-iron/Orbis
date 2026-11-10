@@ -59,7 +59,8 @@ const SplitRewardsDialog = ({
   const totalRewardsFormatted = formatTokenAmount(totalRewardsRaw, decimals, 6);
   const exchangeRaw = parseTokenAmount(exchangeAmount === '' ? '0' : exchangeAmount, decimals);
   const restakeRaw = parseTokenAmount(restakeAmount === '' ? '0' : restakeAmount, decimals);
-  const sumRaw = BigInt(exchangeRaw) + BigInt(restakeRaw);
+  const inputError = exchangeRaw === null || restakeRaw === null;
+  const sumRaw = inputError ? BigInt(0) : BigInt(exchangeRaw) + BigInt(restakeRaw);
   const isOverTotal = sumRaw > BigInt(totalRewardsRaw);
   const remainingRaw = (() => {
     if (isOverTotal) {
@@ -76,16 +77,16 @@ const SplitRewardsDialog = ({
 
   const isExchangeAmountValid =
     !!exchangeAmount &&
-    Number(exchangeAmount) > 0;
+    exchangeRaw !== null && BigInt(exchangeRaw) > BigInt(0);
 
   const isRestakeAmountValid =
     !!restakeAmount &&
-    Number(restakeAmount) > 0;
+    restakeRaw !== null && BigInt(restakeRaw) > BigInt(0);
 
   const isSumValid = !isOverTotal && (isExchangeAmountValid || isRestakeAmountValid);
 
   const handleSplit = async () => {
-    if (!selectedExchange || !isSumValid || !isExchangeAmountValid || !isRestakeAmountValid) {
+    if (loading || !isReady || exchangeRaw === null || restakeRaw === null || !selectedExchange || !isSumValid || !isExchangeAmountValid || !isRestakeAmountValid) {
       return;
     }
 
@@ -150,6 +151,7 @@ const SplitRewardsDialog = ({
   };
 
   const handleMaxExchange = () => {
+    if (restakeRaw === null) return;
     const remainingAfterRestake = (() => {
       const total = BigInt(totalRewardsRaw);
       const restake = BigInt(restakeRaw);
@@ -164,6 +166,7 @@ const SplitRewardsDialog = ({
   };
 
   const handleMaxRestake = () => {
+    if (exchangeRaw === null) return;
     const remainingAfterExchange = (() => {
       const total = BigInt(totalRewardsRaw);
       const exchange = BigInt(exchangeRaw);
@@ -390,6 +393,7 @@ const SplitRewardsDialog = ({
             </div>
           )}
         </div>
+        {inputError && <p role="alert" className="text-sm text-destructive">Enter decimal amounts with up to {decimals} decimal places.</p>}
         <DialogFooter>
           <Button
             variant="outline"

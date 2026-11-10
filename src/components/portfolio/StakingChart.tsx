@@ -1,102 +1,43 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Area, AreaChart, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { useDelegations } from '@/hooks/useStaking';
 import { useChain } from '@/hooks/useChain';
-import { useTokenPrice } from '@/hooks/useTokenPrice';
 import { formatTokenAmount } from '@/lib/utils/format';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { ChartConfig } from '@/components/ui/chart';
-
-const DAILY_DATA_POINTS = 30;
-
-// Generate mock daily data based on current USD value for visualization
-const generateMockData = (currentUsdValue: number) => {
-  const today = new Date();
-
-  return Array.from({ length: DAILY_DATA_POINTS }, (_, index) => {
-    const date = new Date(today);
-    date.setDate(today.getDate() - (DAILY_DATA_POINTS - 1 - index));
-
-    const progress = index / (DAILY_DATA_POINTS - 1);
-    const noise = Math.sin(index * 0.7) * 0.03;
-
-    return {
-      date: `${date.getMonth() + 1}/${date.getDate()}`,
-      value: Math.max(0, currentUsdValue * (0.85 + progress * 0.15 + noise)),
-    };
-  });
-};
-
-const CHART_CONFIG: ChartConfig = {
-  value: {
-    label: 'Value (USD)',
-    color: 'var(--chart-1)',
-  },
-};
-
-const formatUsd = (value: number): string => {
-  return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-};
 
 const StakingChart = () => {
   const { config } = useChain();
-  const { data: delegations, isLoading: delegationsLoading } = useDelegations();
-  const { price, isLoading: priceLoading } = useTokenPrice(config.stakingToken.coingeckoId);
-
-  const totalStaked = delegations
-    ? delegations
-        .reduce(
-          (accumulator, delegation) => accumulator + BigInt(delegation.amount ?? '0'),
-          BigInt(0),
-        )
-        .toString()
-    : '0';
-
-  const stakedTokens = Number(
-    formatTokenAmount(totalStaked, config.stakingToken.decimals, 6).replace(/,/g, ''),
-  );
-  const totalUsdValue = price !== null ? stakedTokens * price : 0;
-  const chartData = generateMockData(totalUsdValue);
-  const isLoading = delegationsLoading || priceLoading;
+  const { data: delegations, isLoading, error } = useDelegations();
+  const positions = (delegations ?? []).filter((position) => BigInt(position.amount) > BigInt(0));
+  const total = positions.reduce((sum, position) => sum + BigInt(position.amount), BigInt(0));
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Staking Overview</CardTitle>
-        <CardDescription>
-          {price !== null
-            ? `Total staked value: ${formatUsd(totalUsdValue)}`
-            : 'Your staking value trend'}
-        </CardDescription>
+        <CardTitle>Staking Allocation</CardTitle>
+        <CardDescription>Current native staking positions by validator or pool</CardDescription>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
-          <Skeleton className="h-[250px] w-full" />
+        {isLoading ? <Skeleton className="h-[200px] w-full" /> : error ? (
+          <p role="alert" className="text-sm text-destructive">Staking data unavailable: {error.message}</p>
+        ) : positions.length === 0 ? (
+          <p className="py-16 text-center text-sm text-muted-foreground">No active delegations</p>
         ) : (
-          <ChartContainer config={CHART_CONFIG} className="h-[250px] w-full">
-            <AreaChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" interval={4} />
-              <YAxis tickFormatter={(tick: number) => `$${tick.toFixed(0)}`} />
-              <ChartTooltip
-                content={
-                  <ChartTooltipContent
-                    formatter={(value) => formatUsd(Number(value))}
-                  />
-                }
-              />
-              <Area
-                type="monotone"
-                dataKey="value"
-                stroke="var(--color-value)"
-                fill="var(--color-value)"
-                fillOpacity={0.2}
-              />
-            </AreaChart>
-          </ChartContainer>
+          <ul className="max-h-[250px] space-y-4 overflow-y-auto">
+            {positions.map((position, index) => {
+              const share = Number(BigInt(position.amount) * BigInt(10000) / total) / 100;
+              const name = position.validatorName || position.validatorAddress;
+              return <li key={`${position.validatorAddress}:${index}`} className="space-y-1">
+                <div className="flex flex-wrap justify-between gap-2 text-sm">
+                  <span className="min-w-0 break-all font-medium">{name}</span>
+                  <span>{formatTokenAmount(position.amount, config.stakingToken.decimals, 6)} {config.stakingToken.symbol}</span>
+                </div>
+                <progress className="h-2 w-full accent-primary" value={share} max={100} aria-label={`${name} allocation`} />
+                <p className="text-xs text-muted-foreground">{share === 0 ? '<0.01' : share.toFixed(2)}%</p>
+              </li>;
+            })}
+          </ul>
         )}
       </CardContent>
     </Card>

@@ -57,6 +57,13 @@ const MultiChainDelegations = ({ chains }: MultiChainDelegationsProps) => {
     );
   }
 
+  const failedChains = chains.filter((chain) => chain.address && chain.delegationsError);
+  if (failedChains.length > 0) {
+    return <Card><CardHeader><CardTitle>All Delegations</CardTitle></CardHeader><CardContent>
+      <p role="alert" className="text-sm text-destructive">Staking data unavailable for {failedChains.map((chain) => chain.config.name).join(', ')}. A complete summary cannot be shown.</p>
+    </CardContent></Card>;
+  }
+
   if (allDelegations.length === 0) {
     return (
       <Card>

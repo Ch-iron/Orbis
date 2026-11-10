@@ -32,7 +32,7 @@ const formatRemainingTime = (completionTime: Date | null): string => {
 
 const UnbondingList = () => {
   const { config } = useChain();
-  const { data: entries, isLoading } = useUnbonding();
+  const { data: entries, isLoading, error } = useUnbonding();
   const { decimals, symbol } = config.stakingToken;
 
   if (isLoading) {
@@ -45,6 +45,10 @@ const UnbondingList = () => {
       </Card>
     );
   }
+
+  if (error) return <Card><CardHeader><CardTitle>Unbonding</CardTitle></CardHeader><CardContent>
+    <p role="alert" className="text-sm text-destructive">Unbonding data unavailable: {error.message}</p>
+  </CardContent></Card>;
 
   if (!entries || entries.length === 0) {
     return null;

@@ -43,16 +43,16 @@ const ChainStakingCard = ({ chain }: ChainStakingCardProps) => {
   const delegationCount = delegations?.length ?? 0;
 
   const statItems = [
-    { label: 'APY', value: formattedApy, loading: chain.apyLoading, suffix: '' },
-    { label: config.slug === 'cardano' ? 'Delegated (liquid)' : 'Staked', value: delegations === undefined ? '-' : formatTokenAmount(totalStaked, decimals, 4), loading: chain.delegationsLoading, suffix: symbol },
-    { label: 'Available', value: balance === undefined ? '-' : formatTokenAmount(balance, decimals, 4), loading: chain.balanceLoading, suffix: symbol },
-    { label: 'Rewards', value: rewards === undefined ? '-' : separateRewards ?? rewardDisplay.value, loading: chain.rewardsLoading, suffix: separateRewards ? '' : rewardDisplay.unit, suffixTooltip: separateRewards ? null : rewardDisplay.tooltip },
-    { label: 'Unbonding', value: unbonding === undefined ? '-' : formatTokenAmount(totalUnbonding, decimals, 4), loading: chain.unbondingLoading, suffix: symbol },
+    { label: config.slug === 'sei' ? 'APR' : 'APY', value: formattedApy, loading: chain.apyLoading, error: null, suffix: '' },
+    { label: config.slug === 'cardano' ? 'Delegated (liquid)' : 'Staked', value: delegations === undefined ? '-' : formatTokenAmount(totalStaked, decimals, 4), loading: chain.delegationsLoading, error: chain.delegationsError, suffix: symbol },
+    { label: 'Available', value: balance === undefined ? '-' : formatTokenAmount(balance, decimals, 4), loading: chain.balanceLoading, error: chain.balanceError, suffix: symbol },
+    { label: 'Rewards', value: rewards === undefined ? '-' : separateRewards ?? rewardDisplay.value, loading: chain.rewardsLoading, error: chain.rewardsError, suffix: separateRewards ? '' : rewardDisplay.unit, suffixTooltip: separateRewards ? null : rewardDisplay.tooltip },
+    { label: 'Unbonding', value: unbonding === undefined ? '-' : formatTokenAmount(totalUnbonding, decimals, 4), loading: chain.unbondingLoading, error: chain.unbondingError, suffix: symbol },
   ];
 
   return (
     <Card className="px-5 py-3">
-      <div className="flex items-center gap-8">
+      <div className="flex flex-wrap items-center gap-4 lg:gap-8">
         {/* Chain identity */}
         <div className="flex items-center gap-2.5 min-w-[120px]">
           <Image
@@ -64,7 +64,7 @@ const ChainStakingCard = ({ chain }: ChainStakingCardProps) => {
           />
           <div className="flex flex-col">
             <span className="text-sm font-semibold leading-tight">{config.name}</span>
-            {!chain.delegationsLoading && delegations !== undefined && (
+            {!chain.delegationsLoading && !chain.delegationsError && delegations !== undefined && (
               <span className="text-[11px] text-muted-foreground leading-tight">
                 {delegationCount} delegation{delegationCount !== 1 ? 's' : ''}
               </span>
@@ -78,14 +78,16 @@ const ChainStakingCard = ({ chain }: ChainStakingCardProps) => {
             Wallet not connected for this chain
           </p>
         ) : (
-          <div className="flex flex-1 items-center gap-8">
+          <div className="grid w-full min-w-0 grid-cols-2 gap-4 sm:grid-cols-3 xl:w-auto xl:flex-1 xl:grid-cols-5">
             {statItems.map((stat) => (
               <div key={stat.label} className="flex flex-col items-start min-w-0">
                 <span className="text-[11px] text-muted-foreground leading-tight">{stat.label}</span>
                 {stat.loading ? (
                   <Skeleton className="h-4 w-14 mt-0.5" />
+                ) : stat.error ? (
+                  <span role="alert" title={stat.error.message} className="text-sm text-destructive">Unavailable</span>
                 ) : (
-                  <span className="text-sm font-medium truncate leading-tight">
+                  <span className="text-sm font-medium break-all leading-tight">
                     {stat.value}
                     {stat.suffix && (
                       <>

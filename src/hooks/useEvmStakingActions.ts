@@ -1,5 +1,6 @@
 'use client';
 
+import { waitForSuccessfulReceipt } from '@/lib/wallet/receipt';
 import { useCallback } from 'react';
 import { useAccount, useWriteContract, useSendTransaction, usePublicClient } from 'wagmi';
 import { useQueryClient } from '@tanstack/react-query';
@@ -114,10 +115,8 @@ const useEvmStakingActions = () => {
 
   const waitForTx = useCallback(
     async (txHash: `0x${string}`): Promise<void> => {
-      if (!publicClient) {
-        return;
-      }
-      await publicClient.waitForTransactionReceipt({ hash: txHash });
+      if (!publicClient) throw new Error('Transaction confirmation is unavailable. Check the explorer before retrying.');
+      await waitForSuccessfulReceipt(publicClient, txHash);
     },
     [publicClient],
   );

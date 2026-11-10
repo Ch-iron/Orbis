@@ -34,11 +34,11 @@ const TX_TYPE_VARIANT: Record<TxHistoryEntry['type'], 'default' | 'secondary' | 
 
 const ITEMS_PER_PAGE = 20;
 
-const HistoryView = () => {
+const HistoryForWallet = () => {
   const { isConnected, walletAddress } = useWalletInfo();
   const { config } = useChain();
   const [currentPage, setCurrentPage] = useState(1);
-  const { data, isLoading } = useTxHistory(currentPage);
+  const { data, isLoading, error, isPlaceholderData, refetch } = useTxHistory(currentPage);
   const { decimals, symbol } = config.stakingToken;
 
   const transactions = data?.entries ?? [];
@@ -97,8 +97,13 @@ const HistoryView = () => {
                 <Skeleton key={index} className="h-12 w-full" />
               ))}
             </div>
+          ) : error ? (
+            <div role="alert" className="space-y-3 text-sm">
+              <p className="text-destructive">Transaction history is unavailable: {error.message}</p>
+              <Button variant="outline" onClick={() => void refetch()}>Try again</Button>
+            </div>
           ) : (
-            <>
+            <div aria-busy={isPlaceholderData}>
               <HistoryTable
                 transactions={transactions}
                 decimals={decimals}
@@ -110,9 +115,10 @@ const HistoryView = () => {
                   currentPage={currentPage}
                   totalPages={totalPages}
                   onPageChange={setCurrentPage}
+                  disabled={isPlaceholderData}
                 />
               )}
-            </>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -192,6 +198,7 @@ type PaginationProps = {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  disabled: boolean;
 };
 
 const buildPageNumbers = (
@@ -227,7 +234,7 @@ const buildPageNumbers = (
   return result;
 };
 
-const Pagination = ({ currentPage, totalPages, onPageChange }: PaginationProps) => {
+const Pagination = ({ currentPage, totalPages, onPageChange, disabled }: PaginationProps) => {
   const pageNumbers = buildPageNumbers(currentPage, totalPages);
 
   return (
@@ -250,6 +257,8 @@ const Pagination = ({ currentPage, totalPages, onPageChange }: PaginationProps) 
             variant={item === currentPage ? 'default' : 'outline'}
             size="sm"
             className="min-w-9"
+            disabled={disabled}
+            aria-current={item === currentPage ? 'page' : undefined}
             onClick={() => onPageChange(item)}
           >
             {item}
@@ -258,6 +267,12 @@ const Pagination = ({ currentPage, totalPages, onPageChange }: PaginationProps) 
       })}
     </div>
   );
+};
+
+const HistoryView = () => {
+  const { walletAddress } = useWalletInfo();
+  const { config } = useChain();
+  return <HistoryForWallet key={`${config.slug}:${walletAddress ?? ''}`} />;
 };
 
 export { HistoryView };

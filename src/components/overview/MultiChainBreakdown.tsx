@@ -44,13 +44,14 @@ type MultiChainBreakdownProps = {
 const MultiChainBreakdown = ({ chains }: MultiChainBreakdownProps) => {
   const isLoading = chains.some((chain) => chain.delegationsLoading);
 
-  const chartData = chains.map((chain) => {
+  const chartData = chains.map((chain, index) => {
     const totalStaked = chain.delegations
       ? sumAmounts(chain.delegations.map((delegation) => delegation.amount))
       : '0';
 
     return {
       name: chain.config.name,
+      color: CHART_COLORS[index % CHART_COLORS.length],
       delegations: chain.delegations?.length ?? 0,
       staked: formatTokenAmount(totalStaked, chain.config.stakingToken.decimals, 2),
       symbol: chain.config.stakingToken.symbol,
@@ -59,6 +60,13 @@ const MultiChainBreakdown = ({ chains }: MultiChainBreakdownProps) => {
   });
 
   const totalDelegations = chartData.reduce((sum, entry) => sum + entry.delegations, 0);
+
+  const failedChains = chains.filter((chain) => chain.address && chain.delegationsError);
+  if (failedChains.length > 0) {
+    return <Card><CardHeader><CardTitle>Chain Distribution</CardTitle></CardHeader><CardContent>
+      <p role="alert" className="text-sm text-destructive">Staking data unavailable for {failedChains.map((chain) => chain.config.name).join(', ')}. A complete summary cannot be shown.</p>
+    </CardContent></Card>;
+  }
 
   return (
     <Card>
@@ -96,10 +104,10 @@ const MultiChainBreakdown = ({ chains }: MultiChainBreakdownProps) => {
                   >
                     {chartData
                       .filter((entry) => entry.delegations > 0)
-                      .map((_, index) => (
+                      .map((entry, index) => (
                         <Cell
                           key={`cell-${index}`}
-                          fill={CHART_COLORS[index % CHART_COLORS.length]}
+                          fill={entry.color}
                         />
                       ))}
                   </Pie>

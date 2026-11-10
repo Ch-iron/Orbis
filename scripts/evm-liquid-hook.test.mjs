@@ -9,6 +9,7 @@ function setup(options = {}) {
  const state = [], events = [], calls = []; let cursor = 0, account = owner;
  const wallet = { getChainId: async () => options.wrongChain ? 2 : 1, getAddresses: async () => [account], sendTransaction: async () => { calls.push('send'); return '0x01'; } };
  const imports = {
+  '@/lib/wallet/receipt': load('src/lib/wallet/receipt.ts', {}),
   react: { useRef: (value) => ({ current: value }), useState: (value) => { const index = cursor++; state[index] = value; return [value, (next) => { state[index] = next; events.push([index,next]); }]; } },
   wagmi: { useAccount: () => ({ address: owner, chainId: 1, isConnected: true }), useWalletClient: () => ({ data: wallet }) },
   '@tanstack/react-query': { useQuery: (query) => query, useQueryClient: () => ({ invalidateQueries() {} }) },
