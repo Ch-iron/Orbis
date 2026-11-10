@@ -9,14 +9,14 @@ const RATE = bcs.struct('PoolTokenExchangeRate', { sui: bcs.u64(), pool: bcs.u64
 export async function readSuiState() {
   const result = await suiClient.ledgerService.getEpoch({ readMask: { paths: ['system_state'] } });
   const state = result.response.epoch?.systemState;
-  if (!state?.validators || state.epoch === undefined) throw new Error('Sui 네트워크 상태를 조회하지 못했습니다.');
+  if (!state?.validators || state.epoch === undefined) throw new Error('Could not fetch the Sui network state.');
   return state;
 }
 
 export async function readSuiValidators() {
   const state = await readSuiState();
   return state.validators!.activeValidators.map((validator) => {
-    if (!validator.address || !validator.name || !validator.stakingPool?.id || !validator.stakingPool.exchangeRates?.id || validator.commissionRate === undefined || validator.stakingPool.suiBalance === undefined) throw new Error('Sui 검증자 응답에 필요한 값이 없습니다.');
+    if (!validator.address || !validator.name || !validator.stakingPool?.id || !validator.stakingPool.exchangeRates?.id || validator.commissionRate === undefined || validator.stakingPool.suiBalance === undefined) throw new Error('Required values are missing from the Sui validator response.');
     return {
       address: validator.address, name: validator.name, logo: validator.imageUrl ?? null,
       commission: Number(validator.commissionRate) / 10_000, votingPower: validator.stakingPool.suiBalance.toString(),
@@ -36,7 +36,7 @@ export async function readSuiValidatorYield(tableId: string, activationEpoch: bi
   const state = await readSuiState();
   const epoch = state.epoch!;
   const start = epoch - activationEpoch > BigInt(30) ? epoch - BigInt(30) : activationEpoch;
-  if (start >= epoch || !state.parameters?.epochDurationMs) throw new Error('수익률 계산에 필요한 예치 기간이 부족합니다.');
+  if (start >= epoch || !state.parameters?.epochDurationMs) throw new Error('The staking period is too short to calculate a yield rate.');
   const [initial, current] = await Promise.all([readRate(tableId, start), readRate(tableId, epoch)]);
   return estimateSuiApy(initial, current, Number(epoch - start) * Number(state.parameters.epochDurationMs));
 }
@@ -50,12 +50,12 @@ export async function readSuiPositions(owner: string) {
     const page = await suiClient.core.listOwnedObjects({ owner, type: '0x3::staking_pool::StakedSui', include: { json: true }, limit: 50, cursor });
     items.push(...page.objects);
     cursor = page.hasNextPage ? page.cursor : null;
-    if (page.hasNextPage && (!cursor || seen.has(cursor))) throw new Error('Sui 예치 목록의 페이지 정보가 올바르지 않습니다.');
+    if (page.hasNextPage && (!cursor || seen.has(cursor))) throw new Error('Invalid pagination information in the Sui staking list.');
     if (cursor) seen.add(cursor);
   } while (cursor);
   return Promise.all(items.map(async (item) => {
     const fields = item.json;
-    if (!fields || typeof fields.principal !== 'string' || typeof fields.stake_activation_epoch !== 'string' || typeof fields.pool_id !== 'string') throw new Error('Sui 예치 객체의 형식이 올바르지 않습니다.');
+    if (!fields || typeof fields.principal !== 'string' || typeof fields.stake_activation_epoch !== 'string' || typeof fields.pool_id !== 'string') throw new Error('Invalid Sui stake object format.');
     const principal = BigInt(fields.principal);
     const activationEpoch = BigInt(fields.stake_activation_epoch);
     const validator = validators.find((candidate) => candidate.poolId === fields.pool_id);
@@ -65,6 +65,6 @@ export async function readSuiPositions(owner: string) {
       const [initial, current] = await Promise.all([readRate(validator.exchangeRatesId, activationEpoch), readRate(validator.exchangeRatesId, state.epoch!)]);
       rewards = estimateSuiRewards(principal, initial, current);
     }
-    return { objectId: item.objectId, validatorAddress: validator?.address ?? fields.pool_id, validatorName: validator?.name ?? '비활성 풀', principal, rewards, activationEpoch, pending };
+    return { objectId: item.objectId, validatorAddress: validator?.address ?? fields.pool_id, validatorName: validator?.name ?? 'Inactive pool', principal, rewards, activationEpoch, pending };
   }));
 }

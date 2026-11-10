@@ -7,12 +7,12 @@ export function createSuiAdapter(): StakingAdapter {
     getValidators: readSuiValidators,
     getDelegations: async (owner) => {
       const positions = await readSuiPositions(owner);
-      if (positions.some((position) => position.rewards === null)) throw new Error('비활성 풀의 잔액은 Sui 전용 화면에서 확인하세요.');
+      if (positions.some((position) => position.rewards === null)) throw new Error('Check inactive pool balances on the Sui staking page.');
       return positions.map((position) => ({ validatorAddress: position.validatorAddress, validatorName: position.validatorName, amount: position.principal.toString(), rewards: position.rewards!.toString() }));
     },
     getRewards: async (owner) => {
       const positions = await readSuiPositions(owner);
-      if (positions.some((position) => position.rewards === null)) throw new Error('비활성 Sui 풀의 보상은 개별 출금 시 확인됩니다.');
+      if (positions.some((position) => position.rewards === null)) throw new Error('Rewards for inactive Sui pools are determined when each stake is withdrawn.');
       return { total: positions.reduce((sum, position) => sum + position.rewards!, BigInt(0)).toString(), perValidator: positions.map((position) => ({ validatorAddress: position.validatorAddress, amount: position.rewards!.toString() })) };
     },
     getUnbonding: async () => [],

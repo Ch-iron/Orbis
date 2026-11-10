@@ -6,19 +6,19 @@ type PolygonValidator = { id: number; name: string; contractAddress: string; com
 type ApiResponse<T> = { success: boolean; result: T; summary?: { total: number } };
 async function api<T>(path: string): Promise<ApiResponse<T>> {
   const response = await fetch(`https://staking-api.polygon.technology/api/v3${path}`);
-  if (!response.ok) throw new Error(`Polygon 스테이킹 조회 실패 (${response.status})`);
+  if (!response.ok) throw new Error(`Polygon staking request failed (${response.status})`);
   const data: ApiResponse<T> = await response.json();
-  if (!data.success || data.result === undefined) throw new Error('Polygon 스테이킹 응답이 올바르지 않습니다.');
+  if (!data.success || data.result === undefined) throw new Error('Invalid Polygon staking response.');
   return data;
 }
 export async function readPolygonValidators() {
   const validators: PolygonValidator[] = [];
   for (let offset = 0; ; offset += 100) {
     const page = await api<PolygonValidator[]>(`/validators?limit=100&offset=${offset}`);
-    if (!Array.isArray(page.result) || !Number.isInteger(page.summary?.total)) throw new Error('Polygon 검증자 페이지 응답이 올바르지 않습니다.');
+    if (!Array.isArray(page.result) || !Number.isInteger(page.summary?.total)) throw new Error('Invalid Polygon validator page response.');
     validators.push(...page.result);
     if (offset + page.result.length >= page.summary!.total) return validators;
-    if (!page.result.length) throw new Error('Polygon 검증자 목록을 끝까지 조회하지 못했습니다.');
+    if (!page.result.length) throw new Error('Could not fetch the complete Polygon validator list.');
   }
 }
 export async function readPolygonValidator(id: bigint) {
@@ -42,10 +42,10 @@ export async function readPolygonPositions(owner: Address) {
   const ids: number[] = [];
   for (let offset = 0; ; offset += 100) {
     const page = await api<Array<{ bondedValidator: number }>>(`/delegators/${owner}?limit=100&offset=${offset}`);
-    if (!Array.isArray(page.result) || !Number.isInteger(page.summary?.total)) throw new Error('Polygon 위임 페이지 응답이 올바르지 않습니다.');
+    if (!Array.isArray(page.result) || !Number.isInteger(page.summary?.total)) throw new Error('Invalid Polygon delegation page response.');
     ids.push(...page.result.map((row) => row.bondedValidator));
     if (offset + page.result.length >= page.summary!.total) break;
-    if (!page.result.length) throw new Error('Polygon 위임 목록을 끝까지 조회하지 못했습니다.');
+    if (!page.result.length) throw new Error('Could not fetch the complete Polygon delegation list.');
   }
   return Promise.all([...new Set(ids)].map((id) => readPolygonPosition(BigInt(id), owner)));
 }
@@ -63,7 +63,7 @@ export async function readPolygonWithdrawal(owner: Address, id: bigint, nonce: b
 export async function readPolygonWithdrawals(owner: Address) {
   getAddress(owner);
   const { result } = await api<Array<{ validatorId: number | string; nonce: number | string; completed: boolean }>>(`/delegators/unbonds/${owner}`);
-  if (!Array.isArray(result)) throw new Error('Polygon 해제 목록 응답이 올바르지 않습니다.');
+  if (!Array.isArray(result)) throw new Error('Invalid Polygon unstaking list response.');
   return Promise.all(result.filter((row) => !row.completed).map((row) => readPolygonWithdrawal(owner, BigInt(row.validatorId), BigInt(row.nonce))));
 }
 export async function readPolygonBalance(owner: Address) {

@@ -27,14 +27,14 @@ export function useVechainStaking() {
     if (lock.current) return;
     lock.current = true; setPending(true); setError(null); setHash(null);
     try {
-      const check = () => { if (!owner || current.current?.toLowerCase() !== owner.toLowerCase()) throw new Error('연결된 VeChain 계정을 확인하세요.'); };
+      const check = () => { if (!owner || current.current?.toLowerCase() !== owner.toLowerCase()) throw new Error('Check the connected VeChain account.'); };
       check();
       const clauses = await prepareVechainAction(owner!, action);
       check();
       const sent = await wallet.requestTransaction(clauses, { signer: owner });
-      if (sent.signer.toLowerCase() !== owner!.toLowerCase()) throw new Error('다른 계정에서 거래를 보냈습니다. 지갑에서 거래 내역을 확인하세요.');
+      if (sent.signer.toLowerCase() !== owner!.toLowerCase()) throw new Error('The transaction was sent from a different account. Check your wallet transaction history.');
       setHash(sent.txid);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'VeChain 거래에 실패했습니다.'); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'VeChain transaction failed.'); }
     finally { lock.current = false; setPending(false); }
   }
   return { owner, levels, validators, positions, balance, block, execute, pending, error, hash, receipt };

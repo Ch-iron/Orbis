@@ -4,9 +4,9 @@ export type CardanoPool = { pool_id_bech32: string; ticker: string | null; margi
 export type CardanoAccount = { stake_address: string; status: string; delegated_pool: string | null; delegated_drep: string | null; total_balance: string; utxo: string; rewards_available: string; deposit: string | null };
 async function koios<T>(path: string, body?: object): Promise<T[]> {
   const response = await fetch(`https://api.koios.rest/api/v1${path}`, body ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) } : undefined);
-  if (!response.ok) throw new Error(`Cardano 조회 실패 (${response.status})`);
+  if (!response.ok) throw new Error(`Cardano request failed (${response.status})`);
   const result: T[] = await response.json();
-  if (!Array.isArray(result)) throw new Error('Cardano API 응답이 올바르지 않습니다.');
+  if (!Array.isArray(result)) throw new Error('Invalid Cardano API response.');
   return result;
 }
 export async function readCardanoPools() {
@@ -19,13 +19,13 @@ export async function readCardanoPools() {
 }
 export async function readCardanoPool(pool: string) {
   const rows = await koios<CardanoPool>('/pool_info', { _pool_bech32_ids: [pool] });
-  if (rows.length !== 1) throw new Error('Cardano 풀을 찾을 수 없습니다.');
+  if (rows.length !== 1) throw new Error('Cardano pool not found.');
   return rows[0];
 }
 export async function readCardanoAccount(stake: string) {
-  if (!stake.startsWith('stake1')) throw new Error('Cardano 메인넷 스테이크 주소가 필요합니다.');
+  if (!stake.startsWith('stake1')) throw new Error('A Cardano mainnet stake address is required.');
   const rows = await koios<CardanoAccount>('/account_info', { _stake_addresses: [stake] });
-  if (rows.length > 1) throw new Error('Cardano 계정 응답이 올바르지 않습니다.');
+  if (rows.length > 1) throw new Error('Invalid Cardano account response.');
   return rows[0] ?? null;
 }
 export async function readCardanoPoolHistory(pool: string) {
@@ -34,14 +34,14 @@ export async function readCardanoPoolHistory(pool: string) {
 export async function readCardanoReceipt(hash: string) {
   const rows = await koios<{ tx_hash: string; valid_contract: boolean }>('/tx_info', { _tx_hashes: [hash] });
   if (!rows.length) return 'pending' as const;
-  if (rows.length !== 1 || rows[0].tx_hash !== hash) throw new Error('Cardano 거래 조회 응답이 올바르지 않습니다.');
+  if (rows.length !== 1 || rows[0].tx_hash !== hash) throw new Error('Invalid Cardano transaction lookup response.');
   return rows[0].valid_contract ? 'success' as const : 'failed' as const;
 }
 export async function readCardanoCostModels() {
   const response = await fetch('https://api.koios.rest/api/v1/cli_protocol_params');
-  if (!response.ok) throw new Error(`Cardano 비용 모델 조회 실패 (${response.status})`);
+  if (!response.ok) throw new Error(`Cardano cost model request failed (${response.status})`);
   const data: { costModels: Record<string, number[]> } = await response.json();
   const models = ['PlutusV1', 'PlutusV2', 'PlutusV3'].map((version) => data.costModels[version]);
-  if (models.some((model) => !Array.isArray(model) || !model.length || !model.every(Number.isSafeInteger))) throw new Error('Cardano 비용 모델 응답이 올바르지 않습니다.');
+  if (models.some((model) => !Array.isArray(model) || !model.length || !model.every(Number.isSafeInteger))) throw new Error('Invalid Cardano cost model response.');
   return models;
 }

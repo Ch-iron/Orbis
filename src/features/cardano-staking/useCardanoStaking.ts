@@ -25,7 +25,7 @@ export function useCardanoStaking(pool: string) {
     if (lock.current) return;
     lock.current = true; setPending(true); setError(null); setHash(null);
     try {
-      if (!enabled || !connection) throw new Error('Cardano 지갑을 연결하세요.');
+      if (!enabled || !connection) throw new Error('Connect a Cardano wallet.');
       await checkCardanoAccount(connection);
       const utxos = await connection.wallet.getUtxos();
       const unsigned = await prepareCardanoAction(connection.stakeAddress, connection.address, utxos, action);
@@ -33,7 +33,7 @@ export function useCardanoStaking(pool: string) {
       const signed = await connection.wallet.signTx(unsigned);
       await checkCardanoAccount(connection);
       setHash(await connection.wallet.submitTx(signed));
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Cardano 거래에 실패했습니다.'); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Cardano transaction failed.'); }
     finally { lock.current = false; setPending(false); }
   }
   return { connected: enabled, connection, pools, history, parameters, account, balance, pending, error, hash, receipt, execute };

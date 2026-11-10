@@ -29,7 +29,7 @@ export function useIotaStaking() {
     lock.current = true; setPending(true); setError(null); setDigest(null); setConfirmed(false);
     try {
       const checkAccount = () => {
-        if (!owner || current.current?.address !== owner || !current.current.chains.includes('iota:mainnet')) throw new Error('연결된 IOTA 메인넷 계정을 확인하세요.');
+        if (!owner || current.current?.address !== owner || !current.current.chains.includes('iota:mainnet')) throw new Error('Check the connected IOTA mainnet account.');
       };
       checkAccount();
       const transaction = await prepareIotaAction(owner!, action);
@@ -39,9 +39,9 @@ export function useIotaStaking() {
       const submitted = await iotaClient.executeTransactionBlock({ transactionBlock: signed.bytes, signature: signed.signature, options: { showEffects: true } });
       setDigest(submitted.digest);
       const receipt = await iotaClient.waitForTransaction({ digest: submitted.digest, options: { showEffects: true } });
-      if (receipt.effects?.status.status !== 'success') throw new Error(receipt.effects?.status.error ?? 'IOTA 거래 실행을 확인하지 못했습니다.');
+      if (receipt.effects?.status.status !== 'success') throw new Error(receipt.effects?.status.error ?? 'Could not confirm IOTA transaction execution.');
       setConfirmed(true);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'IOTA 거래에 실패했습니다.'); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'IOTA transaction failed.'); }
     finally { void cache.invalidateQueries({ predicate: (query) => query.queryKey.includes('iota') }); lock.current = false; setPending(false); }
   };
   return { owner, validators, yields, positions, balance, execute, pending, error, digest, confirmed };

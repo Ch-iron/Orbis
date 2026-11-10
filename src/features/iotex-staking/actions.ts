@@ -8,23 +8,23 @@ export async function prepareIotexAction(owner: Address, action: IotexAction) {
   let data;
   if (action.kind === 'stake') {
     const amount = parseStakeAmount(action.amount);
-    if (amount < parseEther('100')) throw new Error('최소 예치 수량은 100 IOTX입니다.');
-    if (!Number.isInteger(action.days) || action.days < 0 || action.days > 1050) throw new Error('예치 기간은 0–1050일의 정수로 입력하세요.');
+    if (amount < parseEther('100')) throw new Error('The minimum stake is 100 IOTX.');
+    if (!Number.isInteger(action.days) || action.days < 0 || action.days > 1050) throw new Error('Enter a whole number of days from 0 to 1050.');
     const candidates = await readIotexCandidates();
-    if (!candidates.some((item) => item.name === action.candidate && item.selfStakingTokens >= parseEther('1200000'))) throw new Error('활성 검증자를 선택하세요.');
-    if (await iotexClient.getBalance({ address: owner }) <= amount) throw new Error('예치 금액과 가스비를 지불할 잔액이 부족합니다.');
+    if (!candidates.some((item) => item.name === action.candidate && item.selfStakingTokens >= parseEther('1200000'))) throw new Error('Select an active validator.');
+    if (await iotexClient.getBalance({ address: owner }) <= amount) throw new Error('Insufficient balance for the stake and gas fees.');
     // IIP-12 takes the native debit from calldata, not transaction.value.
     data = encodeFunctionData({ abi: STAKING_ABI, functionName: 'createStake', args: [action.candidate, amount, action.days, action.autoStake, []] });
   } else {
     const bucket = await readIotexBucket(action.index);
-    if (bucket.owner.toLowerCase() !== owner.toLowerCase()) throw new Error('연결된 계정의 예치가 아닙니다.');
+    if (bucket.owner.toLowerCase() !== owner.toLowerCase()) throw new Error('This stake does not belong to the connected account.');
     const block = await iotexClient.getBlock();
     const state = iotexBucketState(bucket, block.timestamp);
     if (action.kind === 'unlock') {
-      if (!bucket.autoStake || state.unstaked) throw new Error('자동 잠금 중인 예치만 잠금을 해제할 수 있습니다.');
+      if (!bucket.autoStake || state.unstaked) throw new Error('Only stakes with auto-stake enabled can have it disabled.');
       data = encodeFunctionData({ abi: STAKING_ABI, functionName: 'restake', args: [action.index, bucket.stakedDuration, false, []] });
     } else {
-      if (action.kind === 'unstake' ? !state.canUnstake : !state.canWithdraw) throw new Error('예치 기간 또는 출금 대기 기간이 끝나지 않았습니다.');
+      if (action.kind === 'unstake' ? !state.canUnstake : !state.canWithdraw) throw new Error('The staking period or withdrawal waiting period has not ended.');
       data = encodeFunctionData({ abi: STAKING_ABI, functionName: action.kind === 'unstake' ? 'unstake' : 'withdrawStake', args: [action.index, []] });
     }
   }

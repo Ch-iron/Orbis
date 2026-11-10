@@ -27,13 +27,13 @@ export function useTonStaking(pool: string) {
     if (lock.current) return;
     lock.current = true; setPending(true); setError(null); setSubmitted(null);
     try {
-      const check = () => { if (!owner || !current.current || current.current.account.chain !== '-239' || tonAddress(current.current.account.address) !== tonAddress(owner)) throw new Error('연결된 TON 메인넷 계정을 확인하세요.'); };
+      const check = () => { if (!owner || !current.current || current.current.account.chain !== '-239' || tonAddress(current.current.account.address) !== tonAddress(owner)) throw new Error('Check the connected TON mainnet account.'); };
       check();
       const transaction = await prepareTonAction(owner!, action);
       check();
       const sent = await ui.sendTransaction(transaction);
       setSubmitted({ hash: tonMessageHash(sent.boc), pool: action.pool });
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'TON 거래에 실패했습니다.'); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'TON transaction failed.'); }
     finally { lock.current = false; setPending(false); }
   }
   return { owner, pools, poolInfo, positions, balance, execute, pending, error, submitted, receipt };

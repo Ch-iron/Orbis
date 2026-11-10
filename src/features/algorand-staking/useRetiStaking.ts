@@ -30,13 +30,13 @@ export function useRetiStaking() {
     lock.current = true;
     setPending(true); setError(null); setTxIds([]);
     try {
-      if (!owner) throw new Error('Algorand 지갑을 연결하세요.');
+      if (!owner) throw new Error('Connect an Algorand wallet.');
       const assertWallet = () => {
-        if (current.current.owner !== owner || current.current.activeNetwork !== 'mainnet') throw new Error('Algorand 메인넷과 연결된 지갑을 확인하세요.');
+        if (current.current.owner !== owner || current.current.activeNetwork !== 'mainnet') throw new Error('Check the connected wallet and Algorand mainnet.');
       };
       setTxIds(await executeRetiAction(action, owner, transactionSigner, assertWallet));
       await Promise.all([cache.invalidateQueries({ queryKey: ['reti'] }), cache.invalidateQueries({ queryKey: queryKeys.delegations('algorand', owner) }), cache.invalidateQueries({ queryKey: queryKeys.balance('algorand', owner) })]);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Réti 거래에 실패했습니다.'); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Réti transaction failed.'); }
     finally { lock.current = false; setPending(false); }
   };
   return { owner, validators, account, positions, registration, pending, error, txIds, execute };

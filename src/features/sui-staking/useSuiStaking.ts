@@ -32,10 +32,10 @@ export function useSuiStaking() {
     lock.current = true; setPending(true); setError(null); setDigest(null); setConfirmed(false);
     try {
       const checkAccount = () => {
-        if (!owner || current.current !== owner) throw new Error('Sui 지갑 계정이 변경되었습니다.');
+        if (!owner || current.current !== owner) throw new Error('The Sui wallet account has changed.');
         if (connection) {
-          if (useSuiWalletConnect.getState().connection?.address !== owner) throw new Error('WalletConnect 연결이 변경되었습니다.');
-        } else if (kit.stores.$currentNetwork.get() !== 'mainnet' || kit.stores.$connection.get().account?.address !== owner) throw new Error('Sui 메인넷 계정을 확인하세요.');
+          if (useSuiWalletConnect.getState().connection?.address !== owner) throw new Error('The WalletConnect connection has changed.');
+        } else if (kit.stores.$currentNetwork.get() !== 'mainnet' || kit.stores.$connection.get().account?.address !== owner) throw new Error('Check the Sui mainnet account.');
       };
       checkAccount();
       const prepared = await prepareSuiAction(owner!, action);
@@ -44,11 +44,11 @@ export function useSuiStaking() {
       checkAccount();
       const result = await suiClient.core.executeTransaction({ transaction: fromBase64(signed.bytes), signatures: [signed.signature] });
       setDigest(result.$kind === 'Transaction' ? result.Transaction.digest : result.FailedTransaction.digest);
-      if (result.$kind === 'FailedTransaction') throw new Error('Sui 거래 실행에 실패했습니다.');
+      if (result.$kind === 'FailedTransaction') throw new Error('Sui transaction execution failed.');
       const receipt = await suiClient.core.waitForTransaction({ result });
-      if (receipt.$kind === 'FailedTransaction') throw new Error('Sui 거래 실행에 실패했습니다.');
+      if (receipt.$kind === 'FailedTransaction') throw new Error('Sui transaction execution failed.');
       setConfirmed(true);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Sui 거래에 실패했습니다.'); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Sui transaction failed.'); }
     finally { void cache.invalidateQueries({ predicate: (query) => query.queryKey.includes('sui') }); lock.current = false; setPending(false); }
   };
   return { owner, validators, positions, balance, execute, pending, error, digest, confirmed };

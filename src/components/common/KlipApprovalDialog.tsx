@@ -29,10 +29,10 @@ const KlipApprovalDialog = () => {
     return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   }, []);
 
-  const titleText = requestType === 'auth' ? 'Klip 지갑 연결' : 'Klip 트랜잭션 승인';
+  const titleText = requestType === 'auth' ? 'Connect Klip Wallet' : 'Approve Klip Transaction';
   const descriptionText = requestType === 'auth'
-    ? 'Klip 앱에서 연결 요청을 승인해주세요.'
-    : 'Klip 앱에서 트랜잭션을 승인해주세요.';
+    ? 'Approve the connection request in the Klip app.'
+    : 'Approve the transaction in the Klip app.';
 
   // Auto-open deep link on mobile
   useEffect(() => {
@@ -66,7 +66,7 @@ const KlipApprovalDialog = () => {
                 onClick={() => { window.location.href = deepLink; }}
               >
                 <ExternalLink className="h-4 w-4" />
-                Klip 열기
+                Open Klip
               </Button>
             </>
           ) : (
@@ -80,7 +80,7 @@ const KlipApprovalDialog = () => {
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Klip 앱에서 QR 코드를 스캔해주세요
+                Scan the QR code in the Klip app
               </div>
             </div>
           )}
@@ -91,7 +91,7 @@ const KlipApprovalDialog = () => {
             onClick={clearRequest}
           >
             <X className="h-4 w-4" />
-            취소
+            Cancel
           </Button>
         </div>
       </DialogContent>

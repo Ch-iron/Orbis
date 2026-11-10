@@ -11,11 +11,11 @@ export async function connectMultiversxWallet(kind: 'extension' | 'walletconnect
   if (kind === 'extension') {
     const { ExtensionProvider } = await import('@multiversx/sdk-extension-provider');
     const extension = ExtensionProvider.getInstance();
-    if (!await extension.init()) throw new Error('MultiversX DeFi Wallet 확장 프로그램을 설치하세요.');
+    if (!await extension.init()) throw new Error('Install the MultiversX DeFi Wallet extension.');
     await extension.login(); provider = extension;
   } else {
     const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
-    if (!projectId) throw new Error('WalletConnect 연결 설정이 필요합니다.');
+    if (!projectId) throw new Error('WalletConnect configuration is required.');
     const { WalletConnectV2Provider } = await import('@multiversx/sdk-wallet-connect-provider');
     const wallet = new WalletConnectV2Provider({ onClientLogin: () => {}, onClientLogout: () => useMultiversxWallet.setState({ address: null }), onClientEvent: () => useMultiversxWallet.setState({ address: null }) }, '1', 'wss://relay.walletconnect.com', projectId, { metadata: { name: 'Orbis', description: 'MultiversX staking', url: window.location.origin, icons: [`${window.location.origin}/chains/multiversx.png`] } });
     await wallet.init();
@@ -28,11 +28,11 @@ export async function connectMultiversxWallet(kind: 'extension' | 'walletconnect
   useMultiversxWallet.setState({ address });
 }
 export async function signMultiversxTransaction(owner: string, transaction: Transaction) {
-  const check = async () => { if (!provider || useMultiversxWallet.getState().address !== owner || await provider.getAddress() !== owner) throw new Error('연결된 MultiversX 계정이 변경되었습니다.'); };
+  const check = async () => { if (!provider || useMultiversxWallet.getState().address !== owner || await provider.getAddress() !== owner) throw new Error('The connected MultiversX account has changed.'); };
   await check();
   const signed = await provider!.signTransaction(transaction);
   await check();
-  if (signed.chainID !== '1' || signed.sender.toBech32() !== owner) throw new Error('서명된 거래의 계정 또는 네트워크가 다릅니다.');
+  if (signed.chainID !== '1' || signed.sender.toBech32() !== owner) throw new Error('The signed transaction has a different account or network.');
   return signed;
 }
 export async function disconnectMultiversxWallet() {

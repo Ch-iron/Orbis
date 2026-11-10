@@ -10,16 +10,16 @@
 
 ## Overview
 
-Orbis는 여러 블록체인 네트워크의 스테이킹 보상을 한 곳에서 관리할 수 있는 크립토 네오뱅크입니다. XPLA, SEI, Kaia 메인넷을 지원하며, 체인 어댑터 아키텍처를 통해 새로운 체인을 쉽게 추가할 수 있도록 설계되었습니다.
+Orbis is a crypto neobank for managing staking rewards across blockchain networks in one place. It supports XPLA, Sei, and Kaia mainnet, with chain adapters designed to support additional networks.
 
 ## Features
 
-- **Portfolio** — 전체 스테이킹 자산, 보상, 잔액을 한눈에 확인. 체인별 자산 분포 차트 제공.
-- **Staking** — 밸리데이터 목록 조회, 위임(delegate), 위임 해제(undelegate), 재위임(redelegate) 지원.
-- **Rewards** — 보상 수확(harvest), 복리 재위임(restake), 거래소 전송과 재위임 분할(split rewards) 지원.
-- **History** — 스테이킹 관련 트랜잭션 내역 조회.
-- **Multi-chain** — 체인 선택기를 통해 네트워크를 전환하며, `StakingAdapter` 인터페이스로 체인별 구현을 추상화.
-- **Multi-wallet** — Cosmos 지갑(XPLA Vault, XPLA Games Wallet), EVM 지갑(MetaMask via RainbowKit), A2A 지갑(Klip) 연결 지원. 지갑 설치 여부 자동 감지.
+- **Portfolio**: View staked assets, rewards, and balances, with charts showing asset distribution by chain.
+- **Staking**: Browse validators, delegate, undelegate, and redelegate.
+- **Rewards**: Harvest rewards, restake them, or split them between an exchange transfer and restaking.
+- **History**: View staking transaction history.
+- **Multi-chain**: Switch networks using the chain selector. The `StakingAdapter` interface provides a common interface for chain-specific implementations.
+- **Multi-wallet**: Connect Cosmos wallets (XPLA Vault, XPLA Games Wallet), Ethereum Virtual Machine (EVM) wallets (MetaMask via RainbowKit), and app-to-app (A2A) wallets (Klip), with automatic installation detection.
 
 ## Tech Stack
 
@@ -66,7 +66,7 @@ cp .env.example .env.local
 pnpm dev
 ```
 
-http://localhost:3000 에서 앱이 실행됩니다.
+The app runs at http://localhost:3000.
 
 ### Build
 
@@ -96,11 +96,11 @@ src/
 │
 ├── hooks/                      # Data fetching & wallet hooks
 │   ├── useStaking.ts           # Validators, delegations, rewards, unbonding
-│   ├── useStakingActions.ts    # TX signing & broadcasting (cosmos/evm/klip 분기)
+│   ├── useStakingActions.ts    # TX signing & broadcasting (cosmos/evm/klip branches)
 │   ├── useEvmStakingActions.ts # EVM precompile staking actions
 │   ├── useKlipStakingActions.ts # Klip A2A staking actions
 │   ├── useChain.ts             # Chain config + adapter
-│   └── useWalletInfo.ts        # Cosmos/EVM/Klip wallet state 통합
+│   └── useWalletInfo.ts        # Unified Cosmos/EVM/Klip wallet state
 │
 ├── lib/
 │   ├── chains/
@@ -135,7 +135,7 @@ src/
 
 ### Chain Abstraction
 
-`StakingAdapter` 타입이 체인별 구현을 추상화합니다. 각 체인 모듈(`src/lib/chains/{slug}/index.ts`)이 `ChainConfig` 객체를 export하며, 어댑터 생성(`createAdapter`), APY 계산(`fetchApy`), EVM precompile 설정, 주소 해석 등을 포함합니다.
+The `StakingAdapter` type provides a common interface for chain-specific implementations. Each chain module (`src/lib/chains/{slug}/index.ts`) exports a `ChainConfig` object with adapter creation (`createAdapter`), annual percentage yield (APY) calculation (`fetchApy`), EVM precompile settings, and address resolution.
 
 ```
 StakingAdapter
@@ -164,20 +164,20 @@ StakingAdapter
 
 ### Adding a New Chain
 
-새 체인을 추가하려면 **두 곳**만 수정하면 됩니다.
+Adding a chain requires changes in **two places**.
 
-#### 1. 체인 모듈 생성 — `src/lib/chains/{slug}/`
+#### 1. Create the chain module: `src/lib/chains/{slug}/`
 
 | File            | Description                                    | Required |
 | --------------- | ---------------------------------------------- | -------- |
-| `index.ts`      | `ChainConfig` 객체 export (`createAdapter`, `fetchApy` 포함) | Yes      |
-| `adapter.ts`    | `StakingAdapter` 구현 (validators, delegations, rewards, tx history 등) | Yes      |
-| `client.ts`     | LCD/RPC 클라이언트 팩토리                      | Yes      |
-| `contracts.ts`  | 스마트 컨트랙트 ABI (EVM 체인의 경우)          | Optional |
-| `precompile.ts` | EVM precompile 주소 및 ABI (EVM staking 지원 시) | Optional |
-| `constants.ts`  | RPC URL, 체인 ID 등 체인 상수                  | Optional |
+| `index.ts`      | Exports `ChainConfig`, including `createAdapter` and `fetchApy` | Yes |
+| `adapter.ts`    | Implements `StakingAdapter` for validators, delegations, rewards, transaction history, etc. | Yes |
+| `client.ts`     | LCD/RPC client factory | Yes |
+| `contracts.ts`  | Smart contract ABI for EVM chains | Optional |
+| `precompile.ts` | EVM precompile addresses and ABI when EVM staking is supported | Optional |
+| `constants.ts`  | Chain constants such as RPC URLs and chain IDs | Optional |
 
-`index.ts`에서 export하는 `ChainConfig` 객체의 주요 필드:
+Main fields in the `ChainConfig` object exported from `index.ts`:
 
 ```typescript
 const NEW_CHAIN_CONFIG: ChainConfig = {
@@ -198,10 +198,10 @@ const NEW_CHAIN_CONFIG: ChainConfig = {
   bech32Prefix: 'cosmos',
   gas: { gasPrices: '0.025utoken', gasAdjustment: 1.5 },
   evmPrecompile: { ... },            // EVM precompile staking
-  publicDelegation: { ... },          // ERC-4626 기반 staking (Kaia 방식)
-  addressResolution: { ... },         // EVM→Cosmos 주소 연관 쿼리
+  publicDelegation: { ... },          // ERC-4626 staking, as used by Kaia
+  addressResolution: { ... },         // EVM-to-Cosmos address association query
 
-  cosmosWalletOptions: [ ... ],       // 지갑 선택지 (아래 지갑 추가 가이드 참고)
+  cosmosWalletOptions: [ ... ],       // Wallet options; see the wallet guide below
   evmWalletOptions: [ ... ],
 
   createAdapter: (config, walletAddress, evmAddress) => { ... },
@@ -209,12 +209,12 @@ const NEW_CHAIN_CONFIG: ChainConfig = {
 };
 ```
 
-기존 체인 모듈 참고:
-- **Cosmos LCD 기반**: `src/lib/chains/sei/` (generic fetch LCD client)
-- **XPLA.js 기반**: `src/lib/chains/xpla/` (전용 SDK 사용)
-- **Pure EVM 기반**: `src/lib/chains/kaia/` (viem + PublicDelegation contracts)
+Refer to these existing chain modules:
+- **Cosmos LCD**: `src/lib/chains/sei/` (generic fetch LCD client)
+- **XPLA.js**: `src/lib/chains/xpla/` (dedicated SDK)
+- **Pure EVM**: `src/lib/chains/kaia/` (viem + PublicDelegation contracts)
 
-#### 2. 레지스트리 등록 — `src/lib/chains/registry.ts`
+#### 2. Register the chain: `src/lib/chains/registry.ts`
 
 ```typescript
 import { NEW_CHAIN_CONFIG } from './new-chain';
@@ -223,56 +223,56 @@ const CHAIN_REGISTRY: Record<string, ChainConfig> = {
   xpla: XPLA_CONFIG,
   sei: SEI_CONFIG,
   kaia: KAIA_CONFIG,
-  'new-chain': NEW_CHAIN_CONFIG,  // 이 줄만 추가
+  'new-chain': NEW_CHAIN_CONFIG,  // Add this entry
 };
 ```
 
-#### 체크리스트
+#### Checklist
 
-- [ ] `pnpm build` — TypeScript 컴파일 성공
-- [ ] Portfolio: 잔액, 위임, 리워드, APY 표시
-- [ ] Staking: 밸리데이터 목록, 위임/언위임/리델리게이트
-- [ ] History: 트랜잭션 내역 표시
-- [ ] Overview: 멀티체인 데이터 표시
-- [ ] Wallet: 지갑 연결 및 체인 전환
+- [ ] `pnpm build`: TypeScript compilation succeeds
+- [ ] Portfolio: Displays balances, delegations, rewards, and APY
+- [ ] Staking: Validator list, delegation, undelegation, and redelegation
+- [ ] History: Displays transaction history
+- [ ] Overview: Displays multi-chain data
+- [ ] Wallet: Connection and network switching
 
-> **Note**: hooks (`useChain`, `useStakingApy`, `useEvmStakingActions` 등)와 UI 컴포넌트는 `ChainConfig`의 필드를 동적으로 읽으므로 별도 수정이 필요 없습니다.
+> **Note**: Hooks such as `useChain`, `useStakingApy`, and `useEvmStakingActions`, along with UI components, read `ChainConfig` fields dynamically and do not require separate changes.
 
 ### Adding a New Wallet
 
-지갑은 체인 모듈의 `cosmosWalletOptions` 또는 `evmWalletOptions` 배열에 항목을 추가하면 됩니다. 코드 변경 없이 선언만으로 지갑이 UI에 표시되고, 설치 감지 및 연결이 동작합니다.
+Add an entry to the chain module's `cosmosWalletOptions` or `evmWalletOptions` array. The declaration drives the wallet UI, installation detection, and connection without changes to the UI code.
 
-#### Cosmos 지갑 (browser extension)
+#### Cosmos wallets (browser extension)
 
-`cosmosWalletOptions` 배열에 추가합니다.
+Add an entry to `cosmosWalletOptions`.
 
 ```typescript
 cosmosWalletOptions: [
-  // XPLA wallet-provider가 감지하는 지갑 (injectedFlag 불필요)
+  // Detected by XPLA wallet-provider; injectedFlag is not required
   { label: 'XPLA Vault Wallet', type: 'EXTENSION', identifier: 'xplavault' },
 
-  // 일반 Cosmos 지갑 (window property로 설치 감지)
+  // Other Cosmos wallets use window properties for installation detection
   { label: 'Keplr', type: 'EXTENSION', identifier: 'keplr', injectedFlag: 'keplr' },
   { label: 'Leap', type: 'EXTENSION', identifier: 'leap-cosmos', injectedFlag: 'leap' },
   { label: 'Cosmostation', type: 'EXTENSION', identifier: 'cosmostation', injectedFlag: 'cosmostation' },
 
-  // WalletConnect (설치 감지 없음)
+  // WalletConnect does not use installation detection
   { label: 'WalletConnect', type: 'WALLETCONNECT', identifier: undefined },
 ],
 ```
 
 | Field          | Description | Required |
 | -------------- | ----------- | -------- |
-| `label`        | UI에 표시할 지갑 이름 | Yes |
+| `label`        | Wallet name displayed in the UI | Yes |
 | `type`         | `'EXTENSION'` or `'WALLETCONNECT'` | Yes |
-| `identifier`   | wallet-provider에서 사용하는 식별자 | Yes |
-| `injectedFlag` | `window[flag]`로 설치 감지 (예: `'keplr'` → `window.keplr`) | Optional |
+| `identifier`   | Identifier used by wallet-provider | Yes |
+| `injectedFlag` | Installation detection through `window[flag]`, e.g. `'keplr'` → `window.keplr` | Optional |
 
-> `injectedFlag`가 없으면 `@xpla/wallet-provider`의 `availableConnections`로만 감지합니다. XPLA 계열 지갑은 이 방식으로 자동 감지되므로 `injectedFlag`가 불필요합니다.
+> Without `injectedFlag`, detection uses only `availableConnections` from `@xpla/wallet-provider`. XPLA wallets are detected this way automatically and do not need `injectedFlag`.
 
-#### EVM 지갑 (injected / browser extension)
+#### EVM wallets (injected / browser extension)
 
-`evmWalletOptions` 배열에 추가합니다.
+Add an entry to `evmWalletOptions`.
 
 ```typescript
 evmWalletOptions: [
@@ -297,19 +297,19 @@ evmWalletOptions: [
 
 | Field          | Description | Required |
 | -------------- | ----------- | -------- |
-| `id`           | 고유 식별자 | Yes |
-| `label`        | UI에 표시할 지갑 이름 | Yes |
-| `icon`         | 아이콘 경로 (`public/wallets/` 내) | Yes |
-| `downloadUrl`  | 미설치 시 클릭할 다운로드 URL | Yes |
-| `connectorId`  | wagmi connector ID (`connectors`에서 매칭) | Yes |
-| `injectedFlag` | `window.ethereum[flag]`로 설치 감지 (EIP-5749 multi-provider 지원) | Optional |
-| `isA2A`        | `true`이면 A2A 방식 연결 (아래 참고) | Optional |
+| `id`           | Unique identifier | Yes |
+| `label`        | Wallet name displayed in the UI | Yes |
+| `icon`         | Icon path within `public/wallets/` | Yes |
+| `downloadUrl`  | Download URL opened when the wallet is not installed | Yes |
+| `connectorId`  | wagmi connector ID matched against `connectors` | Yes |
+| `injectedFlag` | Installation detection through `window.ethereum[flag]`, with EIP-5749 multi-provider support | Optional |
+| `isA2A`        | Set to `true` for an A2A connection; see below | Optional |
 
-> `injectedFlag`가 없으면 "Installed" 배지가 표시되지 않습니다. wagmi SDK connector는 미설치 상태에서도 등록되므로, 정확한 감지를 위해 `injectedFlag`를 설정하세요.
+> Without `injectedFlag`, the "Installed" badge is not shown. wagmi SDK connectors can be registered even when the wallet is not installed, so set `injectedFlag` for accurate detection.
 
-#### A2A 지갑 (deep link + polling 방식, 예: Klip)
+#### A2A wallets (deep links and polling, such as Klip)
 
-A2A 지갑은 브라우저 확장이 아닌 모바일 앱을 통해 서명합니다. 현재 Klip이 이 방식으로 구현되어 있습니다.
+A2A wallets sign through a mobile app rather than a browser extension. Klip currently uses this approach.
 
 ```typescript
 evmWalletOptions: [
@@ -319,25 +319,25 @@ evmWalletOptions: [
     icon: '/wallets/klip.png',
     downloadUrl: 'https://klipwallet.com/',
     connectorId: '',
-    isA2A: true,                        // A2A 플로우 활성화
+    isA2A: true,                        // Enable the A2A flow
   },
 ],
 ```
 
-A2A 지갑 추가 시에는 별도의 SDK wrapper, store, staking actions 훅이 필요합니다. 현재 Klip 구현을 참고하세요:
+Adding an A2A wallet requires a separate SDK wrapper, store, and staking action hook. Refer to the current Klip implementation:
 - `src/lib/wallet/klip.ts` — SDK wrapper (prepare → deep link → poll)
-- `src/stores/klipStore.ts` — 주소 persist
-- `src/stores/klipRequestStore.ts` — 활성 요청 상태 (QR/딥링크 다이얼로그 트리거)
-- `src/hooks/useKlipStakingActions.ts` — 트랜잭션 훅
-- `src/components/common/KlipApprovalDialog.tsx` — QR 코드 / 딥링크 대기 UI
+- `src/stores/klipStore.ts`: Persisted address
+- `src/stores/klipRequestStore.ts`: Active request state, triggering QR/deep-link dialogs
+- `src/hooks/useKlipStakingActions.ts`: Transaction hook
+- `src/components/common/KlipApprovalDialog.tsx`: QR code and deep-link approval UI
 
-#### 설치 감지 원리
+#### Installation detection
 
-`src/lib/utils/wallet-detection.ts`의 `isWalletInstalled(flag)` 함수가 통합 감지를 수행합니다:
+The `isWalletInstalled(flag)` function in `src/lib/utils/wallet-detection.ts` performs the following checks:
 
-1. `window[flag]` 확인 — Cosmos 지갑 (예: `window.keplr`, `window.leap`)
-2. `window.ethereum[flag]` 확인 — EVM 지갑 (예: `window.ethereum.isMetaMask`)
-3. `window.ethereum.providers[].flag` 확인 — EIP-5749 multi-provider 환경
+1. Check `window[flag]` for Cosmos wallets, such as `window.keplr` or `window.leap`.
+2. Check `window.ethereum[flag]` for EVM wallets, such as `window.ethereum.isMetaMask`.
+3. Check `window.ethereum.providers[].flag` in EIP-5749 multi-provider environments.
 
 ## License
 

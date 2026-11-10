@@ -23,11 +23,11 @@ export function useAvalancheStaking() {
     if (lock.current) return;
     lock.current = true; setPending(true); setError(null); setHash(null);
     try {
-      if (!owner || !connection) throw new Error('P-Chain 지갑을 연결하세요.');
+      if (!owner || !connection) throw new Error('Connect a P-Chain wallet.');
       const { transaction } = await prepareAvalancheAction(owner, action);
-      if (useAvalancheWallet.getState().connection !== connection || useWalletTypeStore.getState().walletType !== 'avalanche') throw new Error('지갑 연결이 변경되었습니다.');
+      if (useAvalancheWallet.getState().connection !== connection || useWalletTypeStore.getState().walletType !== 'avalanche') throw new Error('The wallet connection has changed.');
       setHash(await connection.send(transaction));
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Avalanche 거래에 실패했습니다.'); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Avalanche transaction failed.'); }
     finally { lock.current = false; setPending(false); }
   }
   return { owner, validators, balance, positions, pending, error, hash, receipt, execute };

@@ -27,7 +27,7 @@ export function useAptosStaking() {
     try {
       const check = () => {
         const active = current.current;
-        if (!owner || !active.connected || !active.account || aptosAddress(active.account.address.toString()) !== owner || Number(active.network?.chainId) !== 1) throw new Error('연결된 Aptos 메인넷 계정을 확인하세요.');
+        if (!owner || !active.connected || !active.account || aptosAddress(active.account.address.toString()) !== owner || Number(active.network?.chainId) !== 1) throw new Error('Check the connected Aptos mainnet account.');
       };
       check();
       const data = await prepareAptosAction(owner!, action);
@@ -37,7 +37,7 @@ export function useAptosStaking() {
       const receipt = await aptosClient.waitForTransaction({ transactionHash: submitted.hash, options: { checkSuccess: true } });
       if (!receipt.success) throw new Error(receipt.vm_status);
       setConfirmed(true);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Aptos 거래에 실패했습니다.'); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Aptos transaction failed.'); }
     finally { void cache.invalidateQueries({ queryKey: ['aptos'] }); lock.current = false; setPending(false); }
   }
   return { owner, validators, apr, positions, balance, execute, pending, error, hash, confirmed };

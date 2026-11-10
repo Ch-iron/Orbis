@@ -17,9 +17,9 @@ export function IotaWalletOptions({ onConnected }: { onConnected: () => void }) 
       setError(null);
       try {
         const result = await connect.mutateAsync({ wallet });
-        if (!result.accounts.some((account) => account.chains.includes('iota:mainnet'))) throw new Error('IOTA 메인넷 계정을 선택하세요.');
+        if (!result.accounts.some((account) => account.chains.includes('iota:mainnet'))) throw new Error('Select an IOTA mainnet account.');
         setWalletType('iota'); onConnected();
-      } catch (cause) { setError(cause instanceof Error ? cause.message : '지갑 연결에 실패했습니다.'); }
-    }}>{option.name}{!wallet && ' 설치'}</Button>;
+      } catch (cause) { setError(cause instanceof Error ? cause.message : 'Failed to connect the wallet.'); }
+    }}>{option.name}{!wallet && ' (Install)'}</Button>;
   })}{error && <p role="alert" className="text-destructive">{error}</p>}</div>;
 }

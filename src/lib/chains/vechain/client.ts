@@ -26,7 +26,7 @@ export async function readVechainValidators() {
   for (const functionName of ['firstActive', 'firstQueued'] as const) {
     let address = await client.readContract({ address: PROTOCOL_STAKER, abi: STAKER_ABI, functionName });
     while (address !== zeroAddress) {
-      if (seen.has(address.toLowerCase())) throw new Error('VeChain 검증자 목록에 순환 참조가 있습니다.');
+      if (seen.has(address.toLowerCase())) throw new Error('The VeChain validator list contains a circular reference.');
       seen.add(address.toLowerCase()); addresses.push(address);
       address = await client.readContract({ address: PROTOCOL_STAKER, abi: STAKER_ABI, functionName: 'next', args: [address] });
     }

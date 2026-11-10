@@ -23,14 +23,14 @@ export function AlgorandWalletOptions({ onConnected }: { onConnected: () => void
         await setActiveNetwork('mainnet');
         await wallet.connect();
         wallet.setActive();
-        if (!wallet.accounts.length) throw new Error('지갑 계정을 확인하지 못했습니다.');
+        if (!wallet.accounts.length) throw new Error('Could not verify the wallet account.');
         setWalletType('algorand');
         onConnected();
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : '지갑 연결에 실패했습니다.');
+        setError(cause instanceof Error ? cause.message : 'Failed to connect the wallet.');
       } finally { lock.current = false; setPending(false); }
     }}>{wallet.metadata.name}</Button>)}
-    {!WALLET_CONNECT_PROJECT_ID && <><Button variant="outline" className="w-full" disabled>WalletConnect</Button><p className="text-sm text-muted-foreground">WalletConnect 프로젝트 ID 설정이 필요합니다.</p></>}
+    {!WALLET_CONNECT_PROJECT_ID && <><Button variant="outline" className="w-full" disabled>WalletConnect</Button><p className="text-sm text-muted-foreground">A WalletConnect project ID must be configured.</p></>}
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
   </div>;
 }

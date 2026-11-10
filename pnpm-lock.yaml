@@ -44,6 +44,9 @@ importers:
       '@cosmos-kit/react':
         specifier: ^2.24.1
         version: 2.24.1(@cosmjs/amino@0.36.2)(@cosmjs/proto-signing@0.36.2)(@interchain-ui/react@1.26.3(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(bufferutil@4.1.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(utf-8-validate@5.0.10)
+      '@folks-finance/algorand-sdk':
+        specifier: 0.2.6
+        version: 0.2.6(@algorandfoundation/algokit-utils@9.2.2(algosdk@3.9.0))(algosdk@3.9.0)
       '@interchain-ui/react':
         specifier: ^1.26.3
         version: 1.26.3(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -149,6 +152,9 @@ importers:
       bech32:
         specifier: ^2.0.0
         version: 2.0.0
+      buffer:
+        specifier: 6.0.3
+        version: 6.0.3
       chain-registry:
         specifier: 1.69.503
         version: 1.69.503
@@ -903,6 +909,12 @@ packages:
 
   '@floating-ui/utils@0.2.12':
     resolution: {integrity: sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww==}
+
+  '@folks-finance/algorand-sdk@0.2.6':
+    resolution: {integrity: sha512-ijKjlIqB5hqFQoVcVvabkX/k13cwtxbI15P7BO8y9pmK+swKtdmTalvLGyom65Ddhqy7y2pjV428KJzYt330CQ==}
+    peerDependencies:
+      '@algorandfoundation/algokit-utils': ^9.0.0
+      algosdk: ^3.0.0
 
   '@formatjs/ecma402-abstract@2.3.6':
     resolution: {integrity: sha512-HJnTFeRM2kVFVr5gr5kH1XP6K0JcJtE7Lzvtr3FS/so5f1kpsqqqxy5JF+FRaO6H2qmcMfAUIox7AJteieRtVw==}
@@ -10391,6 +10403,11 @@ snapshots:
   '@floating-ui/utils@0.2.10': {}
 
   '@floating-ui/utils@0.2.12': {}
+
+  '@folks-finance/algorand-sdk@0.2.6(@algorandfoundation/algokit-utils@9.2.2(algosdk@3.9.0))(algosdk@3.9.0)':
+    dependencies:
+      '@algorandfoundation/algokit-utils': 9.2.2(algosdk@3.9.0)
+      algosdk: 3.9.0
 
   '@formatjs/ecma402-abstract@2.3.6':
     dependencies:

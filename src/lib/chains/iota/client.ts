@@ -15,7 +15,7 @@ export async function readIotaValidators() {
 export async function readIotaYields() {
   const result = await iotaClient.getValidatorsApy();
   return new Map(result.apys.map((item) => {
-    if (!Number.isFinite(item.apy) || item.apy < 0) throw new Error('IOTA 수익률 응답이 올바르지 않습니다.');
+    if (!Number.isFinite(item.apy) || item.apy < 0) throw new Error('Invalid IOTA yield rate response.');
     return [item.address, item.apy];
   }));
 }

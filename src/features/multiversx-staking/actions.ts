@@ -10,18 +10,18 @@ export async function prepareMultiversxAction(owner: string, action: MultiversxA
   const sender = Address.newFromBech32(owner);
   const delegationContract = Address.newFromBech32(action.contract);
   const providers = await readMultiversxProviders();
-  if (!providers.some((provider) => provider.provider === action.contract)) throw new Error('등록된 MultiversX 위임 계약을 선택하세요.');
+  if (!providers.some((provider) => provider.provider === action.contract)) throw new Error('Select a registered MultiversX delegation contract.');
   let amount = BigInt(0);
   if ('amount' in action) {
-    if (!/^\d+(\.\d{1,18})?$/.test(action.amount)) throw new Error('수량은 소수점 18자리 이내로 입력하세요.');
+    if (!/^\d+(\.\d{1,18})?$/.test(action.amount)) throw new Error('Enter an amount with up to 18 decimal places.');
     amount = parseUnits(action.amount, 18);
-    if (amount <= BigInt(0)) throw new Error('수량은 0보다 커야 합니다.');
+    if (amount <= BigInt(0)) throw new Error('The amount must be greater than zero.');
   }
   if (action.kind !== 'delegate') {
     const position = await readMultiversxPosition(action.contract, owner);
-    if (action.kind === 'undelegate' && amount > position.active) throw new Error('예치 잔액을 초과했습니다.');
-    if (action.kind === 'withdraw' && position.withdrawable === BigInt(0)) throw new Error('현재 출금 가능한 금액이 없습니다.');
-    if ((action.kind === 'claim' || action.kind === 'compound') && position.rewards === BigInt(0)) throw new Error('수령 가능한 보상이 없습니다.');
+    if (action.kind === 'undelegate' && amount > position.active) throw new Error('The amount exceeds the staked balance.');
+    if (action.kind === 'withdraw' && position.withdrawable === BigInt(0)) throw new Error('No funds are currently available to withdraw.');
+    if ((action.kind === 'claim' || action.kind === 'compound') && position.rewards === BigInt(0)) throw new Error('No rewards are available to claim.');
   }
   const factory = new DelegationTransactionsFactory({ config: new TransactionsFactoryConfig({ chainID: '1' }) });
   const transaction = await (() => {
@@ -35,7 +35,7 @@ export async function prepareMultiversxAction(owner: string, action: MultiversxA
   })();
   const account = await multiversxClient.getAccount(sender);
   transaction.nonce = account.nonce;
-  if (transaction.value + transaction.gasLimit * transaction.gasPrice > account.balance) throw new Error('거래 수량과 가스비를 지불할 잔액이 부족합니다.');
+  if (transaction.value + transaction.gasLimit * transaction.gasPrice > account.balance) throw new Error('Insufficient balance for the transaction amount and gas fees.');
   // The node requires a signature-sized field even when signature checks are disabled.
   const simulationTransaction = Transaction.newFromPlainObject(transaction.toPlainObject());
   simulationTransaction.signature = new Uint8Array(64);

@@ -19,8 +19,8 @@ async function initialize() {
 export async function connectNearWallet(id: 'near-snap' | 'wallet-connect') {
   const selector = await getNearSelector();
   const wallet = await selector.wallet(id);
-  if (wallet.type !== 'injected' && wallet.type !== 'bridge') throw new Error('지원하지 않는 NEAR 지갑 방식입니다.');
-  try { const accounts = await wallet.signIn({}); if (!accounts.length) throw new Error('NEAR 계정을 선택하세요.'); }
+  if (wallet.type !== 'injected' && wallet.type !== 'bridge') throw new Error('Unsupported NEAR wallet type.');
+  try { const accounts = await wallet.signIn({}); if (!accounts.length) throw new Error('Select a NEAR account.'); }
   finally { useNearWallet.setState({ uri: null }); }
 }
 export async function disconnectNearWallet() {

@@ -27,16 +27,17 @@ type SummaryCardData = {
   value: string;
   icon: React.ComponentType<IconProps>;
   loading: boolean;
+  error?: Error | null;
   suffix?: string;
   suffixTooltip?: string | null;
 };
 
 const PortfolioSummaryCards = () => {
   const { config } = useChain();
-  const { data: delegations, isLoading: delegationsLoading } = useDelegations();
-  const { data: balance, isLoading: balanceLoading } = useBalance();
-  const { data: rewards, isLoading: rewardsLoading } = useRewards();
-  const { data: unbondingEntries, isLoading: unbondingLoading } = useUnbonding();
+  const { data: delegations, isLoading: delegationsLoading, error: delegationsError } = useDelegations();
+  const { data: balance, isLoading: balanceLoading, error: balanceError } = useBalance();
+  const { data: rewards, isLoading: rewardsLoading, error: rewardsError } = useRewards();
+  const { data: unbondingEntries, isLoading: unbondingLoading, error: unbondingError } = useUnbonding();
   const { apy, isLoading: apyLoading } = useStakingApy();
 
   const totalStaked = delegations
@@ -46,13 +47,18 @@ const PortfolioSummaryCards = () => {
     ? sumAmounts(unbondingEntries.map((entry) => entry.amount))
     : '0';
   const { decimals, symbol } = config.stakingToken;
-  const rewardDisplay = formatRewardDisplay(rewards?.total ?? '0', decimals, symbol);
+  const rewardTokens = rewards?.tokens?.length
+    ? rewards.tokens
+    : (config.rewardTokens ?? [config.stakingToken]).map((token) => ({
+        ...token,
+        amount: token.denom === config.stakingToken.denom ? rewards?.total ?? '0' : '0',
+      }));
 
   const formattedApy = apy !== null ? `${(apy * 100).toFixed(2)}%` : '-';
 
   const cards: SummaryCardData[] = [
     {
-      label: 'Network Staking APY',
+      label: config.slug === 'sei' ? 'Network Staking APR' : 'Network Staking APY',
       value: formattedApy,
       icon: TrendingUp,
       loading: apyLoading,
@@ -63,26 +69,33 @@ const PortfolioSummaryCards = () => {
       value: formatTokenAmount(totalStaked, decimals, 4),
       icon: Coins,
       loading: delegationsLoading,
+      error: delegationsError,
     },
     {
       label: 'Available Balance',
       value: formatTokenAmount(balance ?? '0', decimals, 4),
       icon: Wallet,
       loading: balanceLoading,
+      error: balanceError,
     },
-    {
-      label: 'Pending Rewards',
-      value: rewardDisplay.value,
-      icon: Gift,
-      loading: rewardsLoading,
-      suffix: rewardDisplay.unit,
-      suffixTooltip: rewardDisplay.tooltip,
-    },
+    ...rewardTokens.map((token) => {
+      const display = formatRewardDisplay(token.amount, token.decimals, token.symbol);
+      return {
+        label: `Pending Rewards (${token.symbol})`,
+        value: display.value,
+        icon: Gift,
+        loading: rewardsLoading,
+        error: rewardsError,
+        suffix: display.unit,
+        suffixTooltip: display.tooltip,
+      };
+    }),
     {
       label: 'Unbonding',
       value: formatTokenAmount(totalUnbonding, decimals, 4),
       icon: Timer,
       loading: unbondingLoading,
+      error: unbondingError,
     },
   ];
 
@@ -99,6 +112,11 @@ const PortfolioSummaryCards = () => {
           <CardContent>
             {card.loading ? (
               <Skeleton className="h-8 w-32" />
+            ) : card.error ? (
+              <div role="alert" className="text-sm text-destructive">
+                <p>Unavailable</p>
+                <p>{card.error.message}</p>
+              </div>
             ) : (
               <div className="text-2xl font-bold">
                 {card.value}

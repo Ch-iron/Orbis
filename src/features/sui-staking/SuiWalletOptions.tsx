@@ -28,11 +28,11 @@ export function SuiWalletOptions({ onConnected }: { onConnected: () => void }) {
         await disconnectSuiWalletConnect();
         kit.switchNetwork('mainnet');
         const result = await kit.connectWallet({ wallet });
-        if (!result.accounts.some((account) => account.chains.includes('sui:mainnet'))) throw new Error('Sui 메인넷 계정을 선택하세요.');
+        if (!result.accounts.some((account) => account.chains.includes('sui:mainnet'))) throw new Error('Select a Sui mainnet account.');
       }
       setWalletType('sui'); onConnected();
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Sui 지갑 연결에 실패했습니다.'); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Failed to connect the Sui wallet.'); }
     finally { lock.current = false; setPending(false); }
   };
-  return <div className="space-y-3">{['Slush', 'Nightly', 'WalletConnect'].map((name) => <Button className="w-full" variant="outline" key={name} disabled={pending || (name === 'WalletConnect' && !WALLET_CONNECT_PROJECT_ID)} onClick={() => connect(name)}>{name}</Button>)}{!WALLET_CONNECT_PROJECT_ID && <p className="text-sm text-muted-foreground">WalletConnect 프로젝트 ID 설정이 필요합니다.</p>}{uri && <div className="space-y-2"><QRCodeSVG value={uri} size={256} className="mx-auto bg-white p-2" /><a className="block text-center underline" href={uri}>모바일 지갑에서 열기</a></div>}{error && <p role="alert" className="text-destructive">{error}</p>}</div>;
+  return <div className="space-y-3">{['Slush', 'Nightly', 'WalletConnect'].map((name) => <Button className="w-full" variant="outline" key={name} disabled={pending || (name === 'WalletConnect' && !WALLET_CONNECT_PROJECT_ID)} onClick={() => connect(name)}>{name}</Button>)}{!WALLET_CONNECT_PROJECT_ID && <p className="text-sm text-muted-foreground">A WalletConnect project ID must be configured.</p>}{uri && <div className="space-y-2"><QRCodeSVG value={uri} size={256} className="mx-auto bg-white p-2" /><a className="block text-center underline" href={uri}>Open in Mobile Wallet</a></div>}{error && <p role="alert" className="text-destructive">{error}</p>}</div>;
 }

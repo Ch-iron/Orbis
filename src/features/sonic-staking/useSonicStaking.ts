@@ -34,10 +34,10 @@ export function useSonicStaking() {
     if (lock.current) return;
     lock.current = true; setPending(true); setError(null); setHash(null); setConfirmed(false);
     try {
-      if (!enabled || !wallet || !address || chainId !== sonic.id) throw new Error('Sonic 메인넷 지갑을 연결하세요.');
+      if (!enabled || !wallet || !address || chainId !== sonic.id) throw new Error('Connect a Sonic mainnet wallet.');
       const checkAccount = async () => {
         const [network, accounts] = await Promise.all([wallet.getChainId(), wallet.getAddresses()]);
-        if (network !== sonic.id || accounts[0]?.toLowerCase() !== address.toLowerCase()) throw new Error('지갑 계정 또는 네트워크가 변경되었습니다.');
+        if (network !== sonic.id || accounts[0]?.toLowerCase() !== address.toLowerCase()) throw new Error('The wallet account or network has changed.');
       };
       await checkAccount();
       const transactions = await prepareSonicAction(address, action);
@@ -48,12 +48,12 @@ export function useSonicStaking() {
         wait: async (hash) => {
           let replaced = false;
           const receipt = await sonicClient.waitForTransactionReceipt({ hash, onReplaced: ({ reason }) => { if (reason !== 'repriced') replaced = true; } });
-          if (replaced) throw new Error('거래가 취소되거나 변경되었습니다. 탐색기에서 확인하세요.');
+          if (replaced) throw new Error('The transaction was cancelled or replaced. Check the explorer.');
           return receipt;
         },
         onSubmitted: setHash, onConfirmed: () => setConfirmed(true),
       });
-    } catch (cause) { setError(cause instanceof Error ? cause.message : '거래에 실패했습니다.'); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Transaction failed.'); }
     finally { void cache.invalidateQueries({ predicate: (query) => query.queryKey.includes('sonic') }); lock.current = false; setPending(false); }
   };
   return { validators, names, apr, parameters, balance, positions, withdrawals, execute, pending, error, hash, confirmed, connected: enabled, correctNetwork: chainId === sonic.id };

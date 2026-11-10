@@ -21,7 +21,7 @@ import { useChainStore } from '@/stores/chainStore';
 
 const DelegationList = () => {
   const { config } = useChain();
-  const { data: delegations, isLoading } = useDelegations();
+  const { data: delegations, isLoading, error } = useDelegations();
   const selectedChainSlug = useChainStore((state) => state.selectedChainSlug);
   const { decimals, symbol } = config.stakingToken;
 
@@ -37,6 +37,18 @@ const DelegationList = () => {
               <Skeleton key={index} className="h-12 w-full" />
             ))}
           </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader><CardTitle>Active Delegations</CardTitle></CardHeader>
+        <CardContent>
+          <p role="alert" className="text-destructive">{error.message}</p>
+          <Link href={`/stake/${selectedChainSlug}`}>View staking details</Link>
         </CardContent>
       </Card>
     );
@@ -82,8 +94,8 @@ const DelegationList = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {delegations.map((delegation) => (
-              <TableRow key={delegation.validatorAddress}>
+            {delegations.map((delegation, index) => (
+              <TableRow key={`${delegation.validatorAddress}-${index}`}>
                 <TableCell className="font-medium">
                   {delegation.validatorName}
                 </TableCell>
@@ -91,7 +103,7 @@ const DelegationList = () => {
                   {formatTokenAmount(delegation.amount, decimals, 4)} {symbol}
                 </TableCell>
                 <TableCell className="text-right">
-                  {(() => {
+                  {config.rewardTokens?.length ? 'See reward totals above' : (() => {
                     const reward = formatRewardDisplay(delegation.rewards, decimals, symbol);
                     return (
                       <>

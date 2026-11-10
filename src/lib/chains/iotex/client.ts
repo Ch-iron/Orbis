@@ -20,7 +20,7 @@ export async function readIotexBuckets(owner: Address) {
 }
 export async function readIotexBucket(index: bigint) {
   const buckets = await iotexClient.readContract({ address: STAKING, abi: STAKING_ABI, functionName: 'bucketsByIndexes', args: [[index]] });
-  if (buckets.length !== 1 || buckets[0].index !== index) throw new Error('IoTeX 예치를 찾을 수 없습니다.');
+  if (buckets.length !== 1 || buckets[0].index !== index) throw new Error('IoTeX stake not found.');
   return buckets[0];
 }
 export type IotexBucket = Awaited<ReturnType<typeof readIotexBucket>>;

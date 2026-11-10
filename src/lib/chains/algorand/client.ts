@@ -78,7 +78,7 @@ export async function readRetiPoolCapacity(validatorId: bigint, owner: string, a
   const selected = array(selection.return);
   const key = array(selected[0]);
   const poolAppId = integer(key[2]);
-  if (poolAppId === BigInt(0)) throw new Error('예치 가능한 풀이 없습니다.');
+  if (poolAppId === BigInt(0)) throw new Error('No pools are available for staking.');
   const stakers = integer(await pool(poolAppId).state.global.getValue('numStakers'));
   const maximum = integer(record(constraints.return).maxStakersPerPool);
   return { poolAppId, full: stakers >= maximum };

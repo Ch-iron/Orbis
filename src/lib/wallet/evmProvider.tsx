@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { WagmiProvider, http } from 'wagmi';
 import { defineChain } from 'viem';
-import { mainnet, sonic, iotex } from 'viem/chains';
+import { mainnet, sonic, iotex, avalanche } from 'viem/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RainbowKitProvider, getDefaultConfig } from '@rainbow-me/rainbowkit';
 import { WALLET_CONNECT_PROJECT_ID } from './constants';
@@ -63,12 +63,13 @@ const kaiaMainnet = defineChain({
 const wagmiConfig = getDefaultConfig({
   appName: 'Orbis',
   projectId: WALLET_CONNECT_PROJECT_ID ?? 'placeholder',
-  chains: [xplaMainnet, seiMainnet, kaiaMainnet, mainnet, sonic, iotex],
+  chains: [xplaMainnet, seiMainnet, kaiaMainnet, mainnet, sonic, iotex, avalanche],
   transports: {
     [xplaMainnet.id]: http(),
     [seiMainnet.id]: http(),
     [kaiaMainnet.id]: http(),
     [sonic.id]: http(),
+    [avalanche.id]: http(),
     [iotex.id]: http('https://babel-api.mainnet.iotex.io'),
     [mainnet.id]: http('https://ethereum-rpc.publicnode.com'),
   },

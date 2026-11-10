@@ -59,7 +59,7 @@ export async function readSonicWithdrawalFromTransaction(owner: Address, hash: H
   const receipt = await sonicClient.getTransactionReceipt({ hash });
   const logs = parseEventLogs({ abi: SFC_ABI, eventName: 'Undelegated', logs: receipt.logs.filter((log) => log.address.toLowerCase() === SFC.toLowerCase()) });
   const requests = logs.filter((log) => log.args.delegator.toLowerCase() === owner.toLowerCase());
-  if (receipt.status !== 'success' || requests.length === 0) throw new Error('이 지갑의 Sonic 해제 거래가 아닙니다.');
+  if (receipt.status !== 'success' || requests.length === 0) throw new Error('This Sonic unstaking transaction does not belong to this wallet.');
   return Promise.all(requests.map((log) => readSonicWithdrawal(owner, log.args.toValidatorID, log.args.wrID)));
 }
 

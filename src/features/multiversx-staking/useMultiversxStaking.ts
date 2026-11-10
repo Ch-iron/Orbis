@@ -22,15 +22,15 @@ export function useMultiversxStaking() {
     if (lock.current) return;
     lock.current = true; setPending(true); setError(null); setHash(null); setConfirmed(false);
     try {
-      if (!owner) throw new Error('MultiversX 지갑을 연결하세요.');
+      if (!owner) throw new Error('Connect a MultiversX wallet.');
       const transaction = await prepareMultiversxAction(owner, action);
       const signed = await signMultiversxTransaction(owner, transaction);
       const submitted = await multiversxClient.sendTransaction(signed);
       setHash(submitted);
       const receipt = await multiversxClient.awaitTransactionCompleted(submitted);
-      if (!receipt.status.isSuccessful()) throw new Error('MultiversX 거래 실행에 실패했습니다. 거래 기록을 확인하세요.');
+      if (!receipt.status.isSuccessful()) throw new Error('MultiversX transaction execution failed. Check the transaction history.');
       setConfirmed(true);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'MultiversX 거래에 실패했습니다.'); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'MultiversX transaction failed.'); }
     finally { void cache.invalidateQueries({ queryKey: ['multiversx'] }); lock.current = false; setPending(false); }
   }
   return { owner, validators, positions, balance, execute, pending, error, hash, confirmed };

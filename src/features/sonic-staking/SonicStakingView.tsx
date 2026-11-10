@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { PoolStakingTabs } from '@/features/staking/PoolStakingTabs';
+import { StakingTargetTable } from '@/features/staking/StakingTargetTable';
 import { formatEther } from 'viem';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,23 +18,25 @@ export function SonicStakingView() {
   const name = (id: bigint) => staking.names.data?.get(id.toString()) ?? `Validator #${id}`;
   const errors = [staking.validators.error, staking.balance.error, staking.positions.error, staking.withdrawals.error, staking.parameters.error].filter(Boolean);
   return <div className="space-y-6">
-    <h1 className="text-2xl font-bold">Sonic 스테이킹</h1>
+    <h1 className="text-2xl font-bold">Sonic Staking</h1>
     <WalletSelectDialog open={open} onOpenChange={setOpen} />
-    {(!staking.connected || !staking.correctNetwork) && <Button onClick={() => setOpen(true)}>Sonic 지갑 연결</Button>}
-    <p>지갑 잔액: {staking.balance.data !== undefined ? `${formatEther(staking.balance.data)} S` : '조회 전'}</p>
-    <p className="text-sm text-muted-foreground">해제 대기: {staking.parameters.data ? `${Number(staking.parameters.data.seconds) / 86400}일 및 ${staking.parameters.data.epochs} 에포크` : '조회 중'}. 두 조건을 모두 충족한 뒤 출금할 수 있습니다.</p>
+    {(!staking.connected || !staking.correctNetwork) && <Button onClick={() => setOpen(true)}>Connect Sonic Wallet</Button>}
+    <p>Wallet balance: {staking.balance.data !== undefined ? `${formatEther(staking.balance.data)} S` : 'Not loaded'}</p>
+    <p className="text-sm text-muted-foreground">Unstaking wait: {staking.parameters.data ? `${Number(staking.parameters.data.seconds) / 86400} days and ${staking.parameters.data.epochs} epochs` : 'Loading'}. Both conditions must be met before withdrawal.</p>
     {errors.map((error, index) => <p key={index} role="alert" className="text-destructive">{error?.message}</p>)}
-    <section className="rounded-xl border p-4 space-y-4">
-      <h2 className="font-semibold">검증자</h2>
-      {staking.validators.isPending && <p>검증자 조회 중</p>}
-      <div className="max-h-80 overflow-auto"><table className="w-full text-sm"><thead><tr><th className="text-left">이름</th><th>수수료</th><th>추정 APR</th><th>선택</th></tr></thead><tbody>{staking.validators.data?.map((validator) => <tr key={validator.id.toString()} className="border-t"><td className="py-3">{name(validator.id)}{validator.status !== BigInt(0) && ' · 비활성'}</td><td className="text-center">{(validator.commission * 100).toFixed(2)}%</td><td className="text-center">{staking.apr.data !== undefined ? `${(staking.apr.data * (1 - validator.commission) * 100).toFixed(2)}%` : '조회 불가'}</td><td className="text-center"><Button size="sm" variant={validatorId === validator.id.toString() ? 'default' : 'outline'} onClick={() => setValidatorId(validator.id.toString())}>선택</Button></td></tr>)}</tbody></table></div>
-      <p className="text-xs text-muted-foreground">APR(연 단리 수익률)은 공식 네트워크 수익률에서 현재 수수료를 차감한 추정치입니다. 검증자의 실제 운영 성과에 따라 달라집니다.</p>
-      <div className="flex gap-2"><Button variant={operation === 'delegate' ? 'default' : 'outline'} onClick={() => setOperation('delegate')}>위임</Button><Button variant={operation === 'undelegate' ? 'default' : 'outline'} onClick={() => setOperation('undelegate')}>해제</Button></div>
-      <p>선택한 검증자: {validatorId || '미선택'}</p><Input aria-label="S 수량" placeholder="S 수량" value={amount} onChange={(event) => setAmount(event.target.value)} />
-      <Button disabled={!staking.connected || !staking.correctNetwork || staking.pending || !validatorId || !amount} onClick={() => staking.execute({ kind: operation, validatorId: BigInt(validatorId), amount, ...(operation === 'undelegate' ? { requestId: BigInt(`0x${crypto.randomUUID().replaceAll('-', '')}`) } : {}) })}>{operation === 'delegate' ? '위임하기' : '해제 요청'}</Button>
-    </section>
-    {staking.connected && <section className="rounded-xl border p-4 space-y-4"><h2 className="font-semibold">내 예치 및 보상</h2>{staking.positions.isPending && <p>조회 중</p>}{staking.positions.data?.filter((position) => position.amount > BigInt(0) || position.rewards > BigInt(0)).map((position) => <div key={position.id.toString()} className="border-b pb-3 space-y-2"><p>{name(position.id)} · {formatEther(position.amount)} S</p><p>보상: {formatEther(position.rewards)} S</p><div className="flex gap-2"><Button disabled={staking.pending || !staking.correctNetwork || position.rewards === BigInt(0)} onClick={() => staking.execute({ kind: 'claimRewards', validatorId: position.id })}>보상 수령</Button><Button variant="outline" disabled={staking.pending || !staking.correctNetwork || position.rewards === BigInt(0)} onClick={() => staking.execute({ kind: 'restakeRewards', validatorId: position.id })}>보상 재위임</Button></div></div>)}</section>}
-    {staking.connected && <section className="rounded-xl border p-4 space-y-3"><h2 className="font-semibold">출금 요청</h2>{staking.withdrawals.isPending && <p>조회 중</p>}{staking.withdrawals.data?.length === 0 && <p>출금 요청이 없습니다.</p>}{staking.withdrawals.data?.map((request) => <div key={`${request.validatorId}-${request.requestId}`} className="space-y-2"><p>{name(request.validatorId)} · {formatEther(request.amount)} S</p><p className="text-sm">{new Date(Number(request.unlockTime) * 1000).toLocaleString()} 이후, 에포크 {request.unlockEpoch.toString()} 도달 시 출금</p><Button disabled={!request.ready || staking.pending || !staking.correctNetwork} onClick={() => staking.execute({ kind: 'withdraw', validatorId: request.validatorId, requestId: request.requestId })}>출금</Button></div>)}</section>}
-    {staking.pending && <p role="status">지갑 승인과 거래 확인을 기다리고 있습니다.</p>}{staking.error && <p role="alert" className="text-destructive">{staking.error}</p>}{staking.hash && <a className="block break-all underline" href={`https://sonicscan.org/tx/${staking.hash}`} target="_blank" rel="noreferrer">{staking.confirmed ? '확인된 거래' : '전송한 거래'}: {staking.hash}</a>}
+    <PoolStakingTabs connected={!!staking.connected} pending={staking.pending}
+      selection={<><section className="rounded-xl border p-4 space-y-4">
+      <h2 className="font-semibold">Validator</h2>
+      {staking.validators.isPending && <p>Loading validators</p>}
+      <StakingTargetTable targets={(staking.validators.data ?? []).filter((item) => item.status === BigInt(0)).map((item) => ({ id: item.id.toString(), name: name(item.id), details: <>Commission {(item.commission * 100).toFixed(2)}% · APR {staking.apr.data !== undefined ? `${(staking.apr.data * (1 - item.commission) * 100).toFixed(2)}%` : 'Unavailable'}</> }))} value={validatorId} onSelect={setValidatorId} loading={staking.validators.isPending} error={staking.validators.error} pending={staking.pending} />
+      <p className="text-xs text-muted-foreground">The annual percentage rate (APR) is estimated from the official network rate after current commission. Actual returns depend on validator performance.</p>
+      <div className="flex gap-2"><Button variant={operation === 'delegate' ? 'default' : 'outline'} onClick={() => setOperation('delegate')}>Delegate</Button><Button variant={operation === 'undelegate' ? 'default' : 'outline'} onClick={() => setOperation('undelegate')}>Unstake</Button></div>
+      <p>Selected validator: {validatorId || 'None selected'}</p><Input aria-label="S amount" placeholder="S amount" value={amount} onChange={(event) => setAmount(event.target.value)} />
+      <Button disabled={!staking.connected || !staking.correctNetwork || staking.pending || !validatorId || !amount} onClick={() => staking.execute({ kind: operation, validatorId: BigInt(validatorId), amount, ...(operation === 'undelegate' ? { requestId: BigInt(`0x${crypto.randomUUID().replaceAll('-', '')}`) } : {}) })}>{operation === 'delegate' ? 'Delegate' : 'Request Unstake'}</Button>
+    </section></>}
+      positions={<>{staking.connected && <section className="rounded-xl border p-4 space-y-4"><h2 className="font-semibold">My Stakes and Rewards</h2>{staking.positions.isPending && <p>Loading</p>}{staking.positions.data?.filter((position) => position.amount > BigInt(0) || position.rewards > BigInt(0)).map((position) => <div key={position.id.toString()} className="border-b pb-3 space-y-2"><p>{name(position.id)} · {formatEther(position.amount)} S</p><p>Rewards: {formatEther(position.rewards)} S</p><div className="flex gap-2"><Button disabled={staking.pending || !staking.correctNetwork || position.rewards === BigInt(0)} onClick={() => staking.execute({ kind: 'claimRewards', validatorId: position.id })}>Claim Rewards</Button><Button variant="outline" disabled={staking.pending || !staking.correctNetwork || position.rewards === BigInt(0)} onClick={() => staking.execute({ kind: 'restakeRewards', validatorId: position.id })}>Redelegate Rewards</Button></div></div>)}</section>}
+{staking.connected && <section className="rounded-xl border p-4 space-y-3"><h2 className="font-semibold">Withdrawal Requests</h2>{staking.withdrawals.isPending && <p>Loading</p>}{staking.withdrawals.data?.length === 0 && <p>No withdrawal requests.</p>}{staking.withdrawals.data?.map((request) => <div key={`${request.validatorId}-${request.requestId}`} className="space-y-2"><p>{name(request.validatorId)} · {formatEther(request.amount)} S</p><p className="text-sm">{new Date(Number(request.unlockTime) * 1000).toLocaleString()}  and epoch {request.unlockEpoch.toString()}  must both be reached before withdrawal</p><Button disabled={!request.ready || staking.pending || !staking.correctNetwork} onClick={() => staking.execute({ kind: 'withdraw', validatorId: request.validatorId, requestId: request.requestId })}>Withdraw</Button></div>)}</section>}</>}
+    />
+    {staking.pending && <p role="status">Waiting for wallet approval and transaction confirmation.</p>}{staking.error && <p role="alert" className="text-destructive">{staking.error}</p>}{staking.hash && <a className="block break-all underline" href={`https://sonicscan.org/tx/${staking.hash}`} target="_blank" rel="noreferrer">{staking.confirmed ? 'Confirmed transaction' : 'Submitted transaction'}: {staking.hash}</a>}
   </div>;
 }

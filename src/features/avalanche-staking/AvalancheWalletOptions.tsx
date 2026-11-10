@@ -11,8 +11,8 @@ export function AvalancheWalletOptions({ onConnected }: { onConnected: () => voi
   async function connect(kind: 'core' | 'ledger' | 'walletconnect') {
     setPending(true); setError(null);
     try { await connectAvalancheWallet(kind); onConnected(); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : '연결 실패'); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : 'Connection failed'); }
     finally { setPending(false); }
   }
-  return <div className="space-y-3">{(['core', 'ledger', 'walletconnect'] as const).map((kind) => <Button className="w-full" key={kind} disabled={pending || (kind === 'walletconnect' && !WALLET_CONNECT_PROJECT_ID)} onClick={() => connect(kind)}>{kind === 'core' ? 'Core' : kind === 'ledger' ? 'Ledger' : 'WalletConnect (Core Mobile)'}</Button>)}<p className="text-xs text-muted-foreground">P-Chain 전용 연결입니다. Ledger는 Avalanche 앱과 첫 번째 계정(m/44′/9000′/0′/0/0)을 사용합니다.</p>{uri && <QRCodeSVG value={uri} size={220} />}{error && <p role="alert">{error}</p>}</div>;
+  return <div className="space-y-3">{(['core', 'ledger', 'walletconnect'] as const).map((kind) => <Button className="w-full" key={kind} disabled={pending || (kind === 'walletconnect' && !WALLET_CONNECT_PROJECT_ID)} onClick={() => connect(kind)}>{kind === 'core' ? 'Core' : kind === 'ledger' ? 'Ledger' : 'WalletConnect (Core Mobile)'}</Button>)}<p className="text-xs text-muted-foreground">P-Chain connections only. Ledger uses the Avalanche app and the first account (m/44′/9000′/0′/0/0).</p>{uri && <QRCodeSVG value={uri} size={220} />}{error && <p role="alert">{error}</p>}</div>;
 }
