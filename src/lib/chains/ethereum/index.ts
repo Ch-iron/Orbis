@@ -1,5 +1,5 @@
 import type { ChainConfig } from '../types';
-import { EVM_WALLET_OPTIONS } from '@/lib/wallet/evm-options';
+import { ETHEREUM_WALLET_OPTIONS } from '@/lib/wallet/evm-options';
 import { createEthereumAdapter } from './adapter';
 
 export const ETHEREUM_CONFIG: ChainConfig = {
@@ -9,7 +9,7 @@ export const ETHEREUM_CONFIG: ChainConfig = {
   stakingToken: { denom: 'wei', decimals: 18, symbol: 'ETH', coingeckoId: 'ethereum' },
   unbondingDays: null,
   evmChainId: 1, evmRpc: 'https://ethereum-rpc.publicnode.com',
-  evmWalletOptions: EVM_WALLET_OPTIONS,
+  evmWalletOptions: ETHEREUM_WALLET_OPTIONS,
   txHistoryExternalUrl: (address) => `https://etherscan.io/address/${address}`,
   createAdapter: createEthereumAdapter,
   // There is no single yield across independently selected liquid staking services.

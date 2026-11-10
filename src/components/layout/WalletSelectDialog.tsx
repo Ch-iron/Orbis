@@ -14,6 +14,7 @@ import { AlgorandWalletOptions } from '@/features/algorand-staking/AlgorandWalle
 import { ConnectType } from '@xpla/wallet-provider';
 import type { Connection, Installation } from '@xpla/wallet-provider';
 import { useEvmConnection } from '@/features/wallet/useEvmConnection';
+import { isMissingInjectedWallet } from '@/features/wallet/evm-wallet-availability';
 import { NativeCosmosWalletOptions } from '@/features/native-cosmos/NativeCosmosWalletOptions';
 import { EVM_WALLET_OPTIONS } from '@/lib/wallet/evm-options';
 import { WALLET_CONNECT_PROJECT_ID } from '@/lib/wallet/constants';
@@ -88,7 +89,7 @@ const WalletSelectDialog = ({ open, onOpenChange, evmChainId: requestedEvmChainI
   const handleEvmWalletClick = async (option: EvmWalletOption) => {
     if (!evmChainId || pending) return;
     const connector = findEvmConnector(option);
-    if (!connector) {
+    if (!connector || isMissingInjectedWallet(option, connector, isWalletInstalled)) {
       window.open(option.downloadUrl, '_blank', 'noopener,noreferrer');
       return;
     }

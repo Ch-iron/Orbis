@@ -45,19 +45,21 @@ The registry contains 19 chains: the existing XPLA, Sei, and Kaia plus 16 additi
 
 | Chain | Connected wallets | Staking path |
 | --- | --- | --- |
-| XPLA, Sei, Kaia | MetaMask, WalletConnect | Validator delegation, unstaking, and reward claims. Klip excluded from the Kaia wallet selector |
-| Ethereum | MetaMask, WalletConnect | Lido deposits, withdrawal requests and claims; Rocket Pool deposits and direct rETH withdrawals |
+| XPLA | XPLA Games Wallet, XPLA Vault Wallet, XPLA WalletConnect, MetaMask, WalletConnect | Validator delegation, unstaking, and reward claims |
+| Sei | MetaMask, Compass Wallet, WalletConnect | Validator delegation, unstaking, and reward claims |
+| Kaia | MetaMask, Kaia Wallet, WalletConnect | Validator delegation, unstaking, and reward claims. Klip excluded from the Kaia wallet selector |
+| Ethereum | MetaMask, Rabby Wallet, Coinbase Wallet, WalletConnect | Lido deposits, withdrawal requests and claims; Rocket Pool deposits and direct rETH withdrawals |
 | Avalanche | Core, Ledger, WalletConnect (Core Mobile) | P-Chain validator delegation and active stake queries; automatic return at maturity |
 | Algorand | Pera, Defly, WalletConnect | Compare Réti validators and pools, stake, and withdraw |
 | NEAR | MetaMask NEAR Snap, WalletConnect | Select pools, stake, unstake, and withdraw |
 | Celestia, dYdX | Keplr, Cosmostation, WalletConnect | Delegate, redelegate, unstake, and claim rewards |
 | Cardano | Lace, Eternl | Register stake keys, delegate to pools, claim rewards, and deregister |
-| Polygon | MetaMask, WalletConnect | Delegate POL on Ethereum, unstake, withdraw, and claim rewards |
+| Polygon | MetaMask, Rabby Wallet, Coinbase Wallet, WalletConnect | Delegate POL on Ethereum, unstake, withdraw, and claim rewards |
 | IoTeX | MetaMask, WalletConnect | Create native buckets, disable auto-stake, unstake, and withdraw |
 | VeChain | VeWorld, Sync2, WalletConnect | Mint StarGate NFTs, delegate, request exits, withdraw VET, and claim VTHO |
 | Aptos | Petra, Nightly | Stake in delegation pools, unstake, reactivate, and withdraw |
 | MultiversX | DeFi Wallet, xPortal, WalletConnect | Delegate, unstake, withdraw, claim rewards, and restake |
-| Sonic | MetaMask, WalletConnect | Delegate, unstake, withdraw, claim rewards, and restake |
+| Sonic | MetaMask, Rabby Wallet, WalletConnect | Delegate, unstake, withdraw, claim rewards, and restake |
 | IOTA | IOTA Wallet, Nightly | Stake with validators and withdraw stake objects |
 | Sui | Slush, Nightly, WalletConnect | Stake with validators and withdraw stake objects |
 | TON | Tonkeeper, MyTonWallet (TON Connect) | Select standard nominator pools, stake, and request full withdrawals |

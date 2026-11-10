@@ -6,6 +6,17 @@ import { defineChain } from 'viem';
 import { mainnet, sonic, iotex, avalanche } from 'viem/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RainbowKitProvider, getDefaultConfig } from '@rainbow-me/rainbowkit';
+import {
+  safeWallet,
+  rainbowWallet,
+  baseAccount,
+  metaMaskWallet,
+  walletConnectWallet,
+  coinbaseWallet,
+  rabbyWallet,
+  compassWallet,
+  kaiaWallet,
+} from '@rainbow-me/rainbowkit/wallets';
 import { WALLET_CONNECT_PROJECT_ID } from './constants';
 import '@rainbow-me/rainbowkit/styles.css';
 
@@ -63,6 +74,12 @@ const kaiaMainnet = defineChain({
 const wagmiConfig = getDefaultConfig({
   appName: 'Orbis',
   projectId: WALLET_CONNECT_PROJECT_ID ?? 'placeholder',
+  // The first group is RainbowKit's default list; keeping it first preserves connector order,
+  // since the wallet dialog picks the first connector whose id matches.
+  wallets: [
+    { groupName: 'Popular', wallets: [safeWallet, rainbowWallet, baseAccount, metaMaskWallet, walletConnectWallet] },
+    { groupName: 'Chain wallets', wallets: [rabbyWallet, coinbaseWallet, compassWallet, kaiaWallet] },
+  ],
   chains: [xplaMainnet, seiMainnet, kaiaMainnet, mainnet, sonic, iotex, avalanche],
   transports: {
     [xplaMainnet.id]: http(),

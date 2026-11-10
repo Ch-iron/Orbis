@@ -1,7 +1,7 @@
 // Kaia chain configuration module
 
 import type { ChainConfig } from '../types';
-import { EVM_WALLET_OPTIONS } from '@/lib/wallet/evm-options';
+import { KAIA_WALLET_OPTIONS } from '@/lib/wallet/evm-options';
 import { createKaiaClient } from './client';
 import { createKaiaAdapter } from './adapter';
 import { PUBLIC_DELEGATION_ABI, CN_STAKING_V3_ABI } from './contracts';
@@ -175,7 +175,7 @@ const KAIA_CONFIG: ChainConfig = {
     cnStakingAbi: CN_STAKING_V3_ABI,
   },
   txHistoryExternalUrl: (address: string) => `https://kaiascan.io/account/${address}?tabId=txList`,
-  evmWalletOptions: EVM_WALLET_OPTIONS,
+  evmWalletOptions: KAIA_WALLET_OPTIONS,
   createAdapter,
   fetchApy: fetchKaiaApy,
 };

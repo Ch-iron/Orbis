@@ -1,7 +1,7 @@
 // SEI chain configuration module
 
 import type { ChainConfig } from '../types';
-import { EVM_WALLET_OPTIONS } from '@/lib/wallet/evm-options';
+import { SEI_WALLET_OPTIONS } from '@/lib/wallet/evm-options';
 import { createCosmosLcdClient } from './client';
 import { createSeiAdapter } from './adapter';
 import { fetchSeiApr } from './apr';
@@ -63,7 +63,7 @@ const SEI_CONFIG: ChainConfig = {
     evmToCosmosEndpoint: '/sei-protocol/seichain/evm/sei_address?evm_address={evmAddress}',
     hasDualAddress: true,
   },
-  evmWalletOptions: EVM_WALLET_OPTIONS,
+  evmWalletOptions: SEI_WALLET_OPTIONS,
   createAdapter,
   fetchApy: fetchSeiApr,
 };
